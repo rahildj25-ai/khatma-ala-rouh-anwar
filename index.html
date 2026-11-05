@@ -300,10 +300,10 @@ async function getWarshLayout(){
  if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("تعذر تحميل فهرس ورش");return r.json();}).then(d=>{
   if(!Array.isArray(d.juz_starts)||d.juz_starts.length!==30||!Array.isArray(d.ayah_starts)||!Array.isArray(d.page_starts)||!Array.isArray(d.surahs))throw new Error("فهرس ورش غير مكتمل");
   const lower=(arr,value)=>{let lo=0,hi=arr.length;while(lo<hi){const mid=(lo+hi)>>1;if(arr[mid]<value)lo=mid+1;else hi=mid;}return lo;};
-  const pageAt=pos=>lower(d.page_starts,pos);
+  const pageAt=pos=>{let lo=0,hi=d.page_starts.length;while(lo<hi){const mid=(lo+hi)>>1;if(d.page_starts[mid]<=pos)lo=mid+1;else hi=mid;}return lo;};
   const juzAyahs=d.juz_starts.map(pos=>lower(d.ayah_starts,pos));
   if(juzAyahs.some((v,i)=>v>=d.ayah_starts.length||(i&&v<=juzAyahs[i-1])))throw new Error("حدود الأجزاء غير صحيحة");
-  if(juzAyahs.some((v,i)=>d.ayah_starts[v]!==d.juz_starts[i]))throw new Error("بداية جزء ليست على حد آية");
+  if(juzAyahs.some((v,i)=>!(i===0&&d.juz_starts[i]===0)&&d.ayah_starts[v]!==d.juz_starts[i]))throw new Error("بداية جزء ليست على حد آية");
   return {data:d,juzAyahs,pageAt};
  });
  return warshLayoutPromise;
