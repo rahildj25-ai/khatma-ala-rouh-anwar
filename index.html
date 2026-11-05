@@ -70,15 +70,30 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px}.page-controls .btn{padding:9px 10px;font-size:12px}}
  .dua-list{display:grid;gap:10px;margin-top:14px}.dua-list p{margin:0;padding:12px 14px;line-height:2.1;background:#f7f5ec;border:1px solid #e4ddc9;border-radius:12px;color:var(--green)}
+
+.hero-inner.hero-layout{max-width:1000px;display:grid;grid-template-columns:minmax(180px,245px) minmax(0,1fr);align-items:center;gap:28px;text-align:center}
+.memorial-photos{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+.memorial-photos img{display:block;width:100%;height:150px;object-fit:cover;object-position:center 30%;filter:grayscale(1);border:3px solid #ffffffc9;border-radius:13px;box-shadow:0 5px 18px #0003}
+.memorial-photos p{grid-column:1/-1;margin:3px 0 0;color:#fff;font-weight:700;font-size:16px;line-height:1.8}
+.hero-copy{min-width:0}
+@media(max-width:650px){.hero-inner.hero-layout{grid-template-columns:1fr;gap:15px}.memorial-photos{max-width:310px;width:100%;margin:0 auto}.memorial-photos img{height:130px}.memorial-photos p{font-size:15px}.hero{padding-top:25px}}
+
 </style>
 </head>
 <body>
 <header class="hero">
- <div class="hero-inner">
-  <div class="mark" aria-hidden="true">۞</div>
-  <h1>ختمة لخويا أنور</h1>
-  <p class="sub">ختمة قرآنية جماعية، نهدي ثوابها ونسأل الله أن يتقبلها ويرحم فقيدنا.</p>
-  <div class="verse">﴿ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾</div>
+ <div class="hero-inner hero-layout">
+  <div class="memorial-photos" aria-label="صور الفقيد أنور">
+   <img src="./IMG_20261106_005137.png" alt="صورة الفقيد أنور" loading="eager">
+   <img src="./IMG_20261106_005153.jpg" alt="صورة أخرى للفقيد أنور" loading="eager">
+   <p>إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ</p>
+  </div>
+  <div class="hero-copy">
+   <div class="mark" aria-hidden="true">۞</div>
+   <h1>ختمة لخويا أنور</h1>
+   <p class="sub">ختمة قرآنية جماعية، نهدي ثوابها ونسأل الله أن يتقبلها ويرحم فقيدنا.</p>
+   <div class="verse">﴿ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾</div>
+  </div>
  </div>
 </header>
 <main>
