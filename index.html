@@ -351,20 +351,22 @@ async function renderSharedWarshPage(page,layout,startAyah,endAyah){
 async function openReader(juz){
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
- $("readerNotice").textContent="كل صفحة تُعرض بآيات الجزء المحدد فقط، حتى الصفحات المشتركة بين جزأين.";
+ $("readerNotice").textContent=activeJuz===6?"الصفحة 121 كاملة ضمن الجزء السادس.":activeJuz===7?"يبدأ الجزء السابع من الصفحة 122.":"تُعرض الصفحات المشتركة الأخرى بحدود الآيات الخاصة بكل جزء.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
  const reader=$("warshReader");reader.innerHTML="";
  $("mushafPageFoot").textContent="جارٍ التحقق من حدود الجزء...";
  try{
   const layout=await getWarshLayout();
   const startAyah=layout.juzAyahs[activeJuz-1],endAyah=activeJuz===30?layout.data.ayah_starts.length:layout.juzAyahs[activeJuz];
-  const first=layout.pageAt(layout.juzOffsets[activeJuz-1]);
+  // User-requested page allocation: show the complete Warsh page 121 in juz 6,
+  // and begin juz 7 from page 122. All other juz boundaries remain data-driven.
+  const first=activeJuz===7?122:layout.pageAt(layout.juzOffsets[activeJuz-1]);
   const last=activeJuz===30?layout.pageAt(layout.data.ayah_starts[layout.data.ayah_starts.length-1]):layout.pageAt(layout.juzOffsets[activeJuz]-1);
   if(last<first||first<1||last>604)throw new Error("مدى صفحات الجزء غير صالح");
   const fragment=document.createDocumentFragment();
   for(let page=first;page<=last;page++){
    const figure=document.createElement("figure");figure.className="warsh-page";
-   if(layout.sharedPages.has(page)){
+   if(layout.sharedPages.has(page)&&!(activeJuz===6&&page===121)){
     const svg=await renderSharedWarshPage(page,layout,startAyah,endAyah);
     figure.append(svg);
    }else{
