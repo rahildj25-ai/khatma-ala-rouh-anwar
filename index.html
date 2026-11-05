@@ -65,7 +65,7 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 .reader-panel{max-width:980px;margin:auto}
 .reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 15px;margin-bottom:10px}
 .reader-head h2{margin:0;color:var(--green);font-size:18px}
-.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0;padding:5px;background:#fffdf6;border:1px solid #e2d8c2;border-radius:8px}.warsh-page img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
+.offline-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:12px 0;padding:12px;background:#f4f7f2;border-radius:12px}.offline-tools span{font-size:12px;color:var(--muted);text-align:center}.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0;padding:5px;background:#fffdf6;border:1px solid #e2d8c2;border-radius:8px}.warsh-page img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
 footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px}.page-controls .btn{padding:9px 10px;font-size:12px}}
@@ -130,6 +130,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <button class="btn small" id="closeReader" type="button">رجوع للموقع</button>
   </div>
   <div class="notice" id="readerNotice">تظهر هنا صفحات الجزء الذي حجزه هذا المشارك فقط، مرتبة من الأعلى إلى الأسفل.</div>
+  <div class="offline-tools"><button class="btn" id="downloadMushaf" type="button">تحميل صفحات القرآن للعمل دون إنترنت</button><span id="offlineStatus" role="status" aria-live="polite">حمّلي الصفحات مرة واحدة بالإنترنت لتقرئيها لاحقاً بلا إنترنت.</span></div>
   <div id="warshReader" class="warsh-reader" aria-live="polite"></div>
   <p class="page-foot" id="mushafPageFoot"></p>
  </div>
@@ -239,7 +240,7 @@ async function openReader(juz){
    img.alt="مصحف ورش عن نافع — الجزء "+activeJuz+" — الصفحة "+page;
    img.loading=page===first?"eager":"lazy";
    img.decoding="async";
-   img.src="https://cdn.jsdelivr.net/gh/QuranHub/quran-pages-images@main/ayat/warsh/"+page+".png";
+   img.src="warsh/"+page+".png";
    img.addEventListener("error",()=>{const msg=document.createElement("figcaption");msg.textContent="تعذر تحميل صورة الصفحة "+page+"؛ تحققي من الاتصال بالإنترنت.";figure.append(msg);});
    figure.append(img);
    const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);
@@ -287,6 +288,35 @@ function cancelPart(i){
  if(name!==p.name){alert("اكتبي نفس الاسم الذي حُجز به الجزء لإلغاء الحجز.");nameInput.focus();return;}
  if(confirm("إلغاء حجز الجزء "+i+"؟")){delete state.parts[i];if(save()){render();connection.textContent="تم إلغاء الحجز.";}}
 }
+
+// تسجيل الموقع كتطبيق ويب قابل للعمل دون إنترنت
+if("serviceWorker" in navigator){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").then(()=>{
+  $("offlineStatus").textContent="الموقع جاهز للحفظ دون إنترنت بعد تحميل صفحات المصحف.";
+ }).catch(()=>{$("offlineStatus").textContent="تعذر تفعيل وضع دون إنترنت في هذا المتصفح."; }));
+}
+$("downloadMushaf").addEventListener("click",async()=>{
+ const button=$("downloadMushaf"),status=$("offlineStatus");
+ if(!("caches" in window)){status.textContent="هذا المتصفح لا يدعم حفظ الصفحات دون إنترنت.";return;}
+ button.disabled=true;
+ try{
+  const cache=await caches.open("anwar-warsh-pages-v1");
+  let saved=0;
+  for(let page=1;page<=604;page++){
+   const url=new URL("warsh/"+page+".png",location.href).href;
+   if(await cache.match(url)){saved++;status.textContent="الصفحات المحفوظة: "+saved+"/604";continue;}
+   const response=await fetch(url);
+   if(!response.ok)throw new Error("page "+page);
+   await cache.put(url,response.clone());
+   saved++;status.textContent="جارٍ تحميل صفحات المصحف: "+saved+"/604";
+  }
+  status.textContent="اكتمل التحميل! صفحات القرآن الـ604 محفوظة ويمكن قراءتها دون إنترنت.";
+  button.textContent="تم تحميل صفحات القرآن ✓";
+ }catch(e){
+  status.textContent="توقف التحميل عند الصفحة "+(saved+1)+". تأكدي من الإنترنت واضغطي الزر لإكمال التحميل.";
+ }finally{button.disabled=false;}
+});
+
 render();
 connection.textContent="تنبيه: الحجوزات والتقدم محفوظان محلياً على هذا الجهاز فقط. لن تظهر التغييرات عند المشاركين الآخرين حتى نربط الموقع بقاعدة بيانات مشتركة.";
 })();
