@@ -179,6 +179,9 @@ const SUPABASE_KEY="sb_publishable_VX9pjIkafY_hieXwg_dguA_nCcvIxVF";
 const TOKEN_KEY="anwar_khatma_claims_v1";
 const DHIKR_DEVICE_KEY="anwar_dhikr_device_v1";
 const DHIKR_QUEUE_KEY="anwar_dhikr_pending_v2";
+const RES_QUEUE_KEY="anwar_res_pending_v1",SNAPSHOT_KEY="anwar_shared_snapshot_v1";
+let reservationQueue=(()=>{try{return JSON.parse(localStorage.getItem(RES_QUEUE_KEY)||"[]")}catch(e){return []}})();
+const saveReservationQueue=()=>{try{localStorage.setItem(RES_QUEUE_KEY,JSON.stringify(reservationQueue))}catch(e){}};
 const readLocal=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||"null")??d}catch(e){return d}};
 const writeLocal=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let dhikrQueue=readLocal(DHIKR_QUEUE_KEY,[]);
@@ -226,7 +229,7 @@ function render(){
   const card=document.createElement("article");card.className="part";
   const top=document.createElement("div");top.className="part-top";
   const title=document.createElement("strong");title.textContent="الجزء "+i;top.append(title);
-  const badge=document.createElement("span");badge.className="status"+(p&&p.done?" done":p?" busy":"");badge.textContent=p&&p.done?"مكتمل ✓":p?"محجوز":"متاح";top.append(badge);card.append(top);
+  const badge=document.createElement("span");badge.className="status"+(p&&p.done?" done":p?" busy":"");badge.textContent=p&&p.pending?"بانتظار المزامنة":p&&p.done?"مكتمل ✓":p?"محجوز":"متاح";top.append(badge);card.append(top);
   const person=document.createElement("div");person.className="person";person.textContent=p?(p.done?"أتمّ القراءة: ":"حجزه: ")+p.name:"متاح للمشاركة";card.append(person);
   if(!p){
    const label=document.createElement("label");
@@ -270,12 +273,17 @@ async function refresh(showMessage=false){
   const rows=await api("/rest/v1/juz_reservations?select=juz,participant_name,status,reserved_at,completed_at&order=juz.asc");
   const next={};
   rows.forEach(row=>{next[row.juz]={name:row.participant_name,done:row.status==="completed",reservedAt:row.reserved_at,completedAt:row.completed_at};});
+  try{localStorage.setItem(SNAPSHOT_KEY,JSON.stringify({parts:next,at:Date.now()}));}catch(e){}
   state.parts=next;
+  for(const op of reservationQueue){if(op.action==="book")state.parts[op.juz]={name:op.name,done:false,pending:true};else if(op.action==="complete"&&state.parts[op.juz])state.parts[op.juz]={...state.parts[op.juz],done:true,pending:true};else if(op.action==="cancel")delete state.parts[op.juz];}
   render();
-  connection.textContent="متصل بالختمة المشتركة ✓ التحديثات تظهر لجميع المشاركين تلقائياً.";
+  connection.textContent=reservationQueue.length?"متصل؛ تغييرات هذا الجهاز تنتظر المزامنة.":"متصل بالختمة المشتركة ✓ التحديثات تظهر لجميع المشاركين تلقائياً.";
  }catch(e){
-  connection.textContent="تعذر الاتصال بالختمة المشتركة. تحققي من الإنترنت؛ لم يتم تسجيل أي تغيير.";
-  if(showMessage)alert("ما قدرناش نتصلو بالختمة المشتركة. تأكدي من الإنترنت وعاودي.");
+  let snap=null;try{snap=JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"null")}catch(e){}
+  if(snap?.parts)state.parts=snap.parts;
+  for(const op of reservationQueue){if(op.action==="book")state.parts[op.juz]={name:op.name,done:false,pending:true};else if(op.action==="complete"&&state.parts[op.juz])state.parts[op.juz]={...state.parts[op.juz],done:true,pending:true};else if(op.action==="cancel")delete state.parts[op.juz];}
+  render();connection.textContent="دون إنترنت: آخر نسخة محفوظة وتغييراتك المعلّقة على هذا الجهاز. لا تظهر للآخرين حتى المزامنة.";
+  if(showMessage&&!snap)alert("اتصلي بالإنترنت مرة واحدة لتحميل حالة الختمة.");
  }finally{refreshing=false;}
 }
 async function migrateOldLocalData(){
@@ -305,37 +313,45 @@ $("bookSelected").addEventListener("click",async()=>{
  let booked=0,failed=0;
  for(const i of selected){
   const token=makeToken();
-  try{
-   const ok=await rpc("book_juz",{p_juz:i,p_name:name,p_token:token});
-   if(ok===true){claims[i]=token;booked++;}else failed++;
-  }catch(e){failed++;}
+  if(!navigator.onLine){claims[i]=token;reservationQueue.push({action:"book",juz:i,name,token,op_id:crypto.randomUUID()});booked++;continue;}
+  try{const ok=await rpc("book_juz",{p_juz:i,p_name:name,p_token:token});if(ok===true){claims[i]=token;booked++;}else failed++;}
+  catch(e){claims[i]=token;reservationQueue.push({action:"book",juz:i,name,token,op_id:crypto.randomUUID()});booked++;}
  }
- saveClaims();
+ saveClaims();saveReservationQueue();
  await refresh();
  button.textContent="احجز الأجزاء المحددة";
- if(booked)connection.textContent="تم حجز "+booked+" جزء باسم "+name+"، والتحديث وصل للختمة المشتركة.";
+ if(booked)connection.textContent=reservationQueue.length?"حُفظ طلب الحجز على هذا الجهاز وينتظر تأكيد الخادم عند رجوع الإنترنت.":"تم حجز "+booked+" جزء باسم "+name+"، والتحديث وصل للختمة المشتركة.";
  if(failed)alert("تحجز "+booked+" جزء. "+failed+" جزء ما تحجزوش لأنه ربما سبقك مشارك آخر أو انقطع الاتصال. شوفي الحالة المحدثة.");
 });
 async function finishPart(i){
  const p=state.parts[i];if(!p||p.done)return;
  if(!claims[i]){alert("إتمام القراءة متاح من الجهاز الذي تم منه حجز هذا الجزء.");return;}
  if(!confirm("تأكيد إتمام قراءة الجزء "+i+" باسم "+p.name+"؟"))return;
- try{
-  const ok=await rpc("complete_juz",{p_juz:i,p_token:claims[i]});
-  if(ok!==true){alert("ما قدرناش نثبت الإتمام. عاودي التحقق من الحجز والاتصال.");return;}
-  await refresh();
-  connection.textContent="تم تسجيل إكمال الجزء "+i+"، وظهر التحديث عند جميع المشاركين.";
- }catch(e){alert("تعذر تسجيل الإتمام بسبب الاتصال. عاودي المحاولة.");}
+ if(!navigator.onLine){reservationQueue.push({action:"complete",juz:i,token:claims[i],op_id:crypto.randomUUID()});saveReservationQueue();state.parts[i]={...p,done:true,pending:true};render();connection.textContent="حُفظ إتمام القراءة محلياً وسيتأكد عند رجوع الإنترنت.";return;}
+ try{const ok=await rpc("complete_juz",{p_juz:i,p_token:claims[i]});if(ok!==true){alert("ما قدرناش نثبت الإتمام. عاودي التحقق من الحجز والاتصال.");return;}await refresh();connection.textContent="تم تسجيل إكمال الجزء "+i+" وظهر التحديث عند الجميع.";}
+ catch(e){reservationQueue.push({action:"complete",juz:i,token:claims[i],op_id:crypto.randomUUID()});saveReservationQueue();state.parts[i]={...p,done:true,pending:true};render();connection.textContent="انقطع الاتصال؛ حفظنا إتمام القراءة للمزامنة لاحقاً.";}
 }
 async function cancelPart(i){
  const p=state.parts[i];if(!p||p.done)return;
  if(!claims[i]){alert("إلغاء الحجز متاح من الجهاز الذي تم منه الحجز.");return;}
  if(!confirm("إلغاء حجز الجزء "+i+"؟"))return;
- try{
-  const ok=await rpc("cancel_juz",{p_juz:i,p_token:claims[i]});
-  if(ok===true){delete claims[i];saveClaims();await refresh();connection.textContent="تم إلغاء الحجز وأصبح الجزء متاحاً للجميع.";}
-  else alert("تعذر إلغاء الحجز؛ ربما تم إتمامه بالفعل.");
- }catch(e){alert("تعذر إلغاء الحجز بسبب الاتصال.");}
+ if(!navigator.onLine){reservationQueue.push({action:"cancel",juz:i,token:claims[i],op_id:crypto.randomUUID()});saveReservationQueue();delete state.parts[i];render();connection.textContent="حُفظ طلب إلغاء الحجز محلياً وسيُرسل عند رجوع الإنترنت.";return;}
+ try{const ok=await rpc("cancel_juz",{p_juz:i,p_token:claims[i]});if(ok===true){delete claims[i];saveClaims();await refresh();connection.textContent="تم إلغاء الحجز وأصبح الجزء متاحاً للجميع.";}else alert("تعذر إلغاء الحجز؛ ربما تم إتمامه بالفعل.");}
+ catch(e){reservationQueue.push({action:"cancel",juz:i,token:claims[i],op_id:crypto.randomUUID()});saveReservationQueue();delete state.parts[i];render();connection.textContent="انقطع الاتصال؛ حفظنا طلب الإلغاء للمزامنة لاحقاً.";}
+}
+async function flushReservationQueue(){
+ if(!navigator.onLine)return;
+ while(reservationQueue.length){
+  const q=reservationQueue[0];let result=false;
+  try{
+   if(q.action==="book")result=await rpc("book_juz",{p_juz:q.juz,p_name:q.name,p_token:q.token});
+   else if(q.action==="complete")result=await rpc("complete_juz",{p_juz:q.juz,p_token:q.token});
+   else if(q.action==="cancel")result=await rpc("cancel_juz",{p_juz:q.juz,p_token:q.token});
+   if(result===true){if(q.action==="book")claims[q.juz]=q.token;if(q.action==="cancel")delete claims[q.juz];saveClaims();reservationQueue.shift();saveReservationQueue();}
+   else{reservationQueue.shift();saveReservationQueue();if(q.action==="book"){delete claims[q.juz];saveClaims();connection.textContent="لم يتأكد حجز الجزء "+q.juz+"؛ ربما حجزه مشارك آخر. حدّثي القائمة.";} }
+  }catch(e){break;}
+ }
+ await refresh();
 }
 let dhikrBusy={istighfar:false,salawat:false};
 async function refreshDhikr(){
