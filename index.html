@@ -268,9 +268,7 @@ $("bookSelected").addEventListener("click",()=>{
 });
 function finishPart(i){
  const p=state.parts[i];if(!p||p.done)return;
- const name=nameInput.value.trim();
- if(name!==p.name){alert("للتأكيد، اكتبي نفس الاسم الذي حُجز به هذا الجزء في خانة الاسم.");nameInput.focus();return;}
- if(!confirm("تأكيد إتمام قراءة الجزء "+i+"؟"))return;
+ if(!confirm("تأكيد إتمام قراءة الجزء "+i+" باسم "+p.name+"؟"))return;
  p.done=true;
  const counts=currentCounts();
  if(counts.done===30){
