@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ختمة على روح فقيدنا أنور</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Tahoma,Arial,sans-serif;
+  background:#f6f3ed;
+  color:#34483d;
+  text-align:center;
+}
+header{
+  background:linear-gradient(135deg,#304d3e,#718c70);
+  color:white;
+  padding:38px 15px;
+}
+header h1{font-size:27px;margin:8px}
+header p{line-height:1.9}
+main{max-width:850px;margin:25px auto;padding:15px}
+.card{
+  background:white;
+  padding:22px;
+  border-radius:18px;
+  margin:18px 0;
+  box-shadow:0 3px 14px #0000000d;
+}
+h2{color:#48664e}
+input{
+  padding:12px;
+  border:1px solid #cbd5c9;
+  border-radius:9px;
+  width:100%;
+  margin:8px 0;
+  font-size:16px;
+}
+button{
+  background:#54765b;
+  color:white;
+  border:0;
+  border-radius:9px;
+  padding:11px 17px;
+  margin:5px;
+  cursor:pointer;
+  font-size:15px;
+}
+button:disabled{opacity:.5;cursor:not-allowed}
+.parts{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:10px;
+}
+.part{
+  border:1px solid #dce5dc;
+  border-radius:12px;
+  padding:13px 5px;
+  background:#f9faf7;
+}
+.part strong{display:block;margin-bottom:7px}
+.part small{display:block;margin:5px}
+.free{color:#39804b}
+.busy{color:#a66c32}
+.done{color:#39804b}
+.note{font-size:13px;color:#777;line-height:1.8}
+footer{padding:25px;color:#71816f}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="font-size:35px">🤍 📖 🤍</div>
+  <h1>ختمة على روح فقيدنا أنور</h1>
+  <p>اللهم اجعل القرآن نوراً له في قبره<br>
+  وارزقه الفردوس الأعلى من الجنة</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>🌿 نية الختمة</h2>
+    <p>نسأل الله أن يتقبل منا هذه الختمة<br>
+    وأن يجعل ثوابها رحمة ونوراً على روح فقيدنا أنور.</p>
+    <p>رحمك الله يا أنور وأسكنك فسيح جناته.</p>
+  </section>
+
+  <section class="card">
+    <h2>📊 تقدم الختمة</h2>
+    <h1 id="progress">0 / 30</h1>
+    <p>الأجزاء المكتملة</p>
+    <div style="background:#e7ece5;border-radius:20px;height:13px">
+      <div id="bar" style="height:13px;width:0%;background:#64866b;border-radius:20px"></div>
+    </div>
+    <p id="summary">نسأل الله القبول 🤍</p>
+  </section>
+
+  <section class="card">
+    <h2>📖 اختار الجزء تاعك</h2>
+    <p class="note">اكتب اسمك، ثم اختار جزءاً متاحاً للمشاركة في الختمة.</p>
+    <input id="name" maxlength="35" placeholder="اكتب اسمك هنا">
+    <div id="parts" class="parts"></div>
+  </section>
+
+  <section class="card">
+    <h2>🤍 دعاء للفقيد</h2>
+    <p style="line-height:2">
+    اللهم ارحم أنور رحمة واسعة، واغفر له،
+    ونوّر قبره، واجعل القرآن شفيعاً له،
+    واجمعنا به في جنات النعيم.
+    </p>
+  </section>
+
+  <p class="note" id="connection">
+  جاري الاتصال بقاعدة البيانات...
+  </p>
+</main>
+
+<footer>
+  صدقة ودعاء على روح فقيدنا أنور 🤍
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+// نضيف إعدادات Firebase في هذه الخانة لاحقاً
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "YOUR_DATABASE_URL",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const partsBox = document.getElementById("parts");
+const connection = document.getElementById("connection");
+let db = null;
+let parts = {};
+
+function render(){
+  partsBox.innerHTML = "";
+  let completed = 0;
+
+  for(let i=1;i<=30;i++){
+    const p = parts[i] || {};
+    if(p.done) completed++;
+
+    const div = document.createElement("div");
+    div.className = "part";
+
+    const title = document.createElement("strong");
+    title.textContent = "الجزء " + i;
+
+    const status = document.createElement("small");
+    status.textContent = p.done ? "مكتمل ✓" :
+      p.name ? "محجوز" : "متاح";
+    status.className = p.done ? "done" : p.name ? "busy" : "free";
+
+    const person = document.createElement("small");
+    person.textContent = p.name ? "القارئ: " + p.name : "لم يُحجز بعد";
+
+    const btn = document.createElement("button");
+    btn.textContent = p.done ? "مكتمل" : p.name ? "محجوز" : "اختيار";
+    btn.disabled = !!p.name;
+
+    btn.onclick = async () => {
+      const name = document.getElementById("name").value.trim();
+      if(!name){
+        alert("اكتب اسمك أولاً");
+        return;
+      }
+      try{
+        const ref = db.ref("khatma/parts/" + i);
+        await ref.transaction(current => {
+          if(current === null || !current.name){
+            return {name:name,done:false};
+          }
+          return;
+        });
+      }catch(e){
+        alert("تعذر الحجز، حاول مرة أخرى");
+      }
+    };
+
+    const doneBtn = document.createElement("button");
+    doneBtn.textContent = "تمت القراءة ✓";
+    doneBtn.disabled = !p.name || p.done;
+    doneBtn.onclick = async () => {
+      if(confirm("هل أكملت قراءة هذا الجزء؟")){
+        await db.ref("khatma/parts/" + i).update({done:true});
+      }
+    };
+
+    div.append(title,status,person,btn,doneBtn);
+    partsBox.appendChild(div);
+  }
+
+  document.getElementById("progress").textContent =
+    completed + " / 30";
+
+  document.getElementById("bar").style.width =
+    (completed/30*100) + "%";
+
+  document.getElementById("summary").textContent =
+    completed === 30 ? "اكتملت الختمة، تقبل الله من الجميع 🤍" :
+    "باقي " + (30-completed) + " جزءاً";
+}
+
+function start(){
+  if(firebaseConfig.apiKey === "YOUR_API_KEY"){
+    connection.textContent =
+      "الموقع يحتاج ربط قاعدة البيانات حتى تعمل المشاركة بين الجميع.";
+    return;
+  }
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+
+    firebase.auth().signInAnonymously().then(() => {
+      connection.textContent = "متصل بقاعدة البيانات 🤍";
+
+      for(let i=1;i<=30;i++){
+        db.ref("khatma/parts/"+i).transaction(
+          current => current === null ? {name:"",done:false} : current
+        );
+      }
+
+      db.ref("khatma/parts").on("value",snapshot=>{
+        parts = snapshot.val() || {};
+        render();
+      });
+    }).catch(()=>{
+      connection.textContent = "تعذر الاتصال. تحقق من إعدادات Firebase.";
+    });
+  }catch(e){
+    connection.textContent = "تحقق من إعدادات الاتصال.";
+  }
+}
+
+render();
+start();
+</script>
+</body>
+</html>
