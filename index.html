@@ -65,7 +65,7 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 .reader-panel{max-width:980px;margin:auto}
 .reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 15px;margin-bottom:10px}
 .reader-head h2{margin:0;color:var(--green);font-size:18px}
-.page-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0}.page-controls strong{font-size:14px;color:var(--green)}.warsh-reader{background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center;max-height:calc(100vh - 205px);overflow:auto}.warsh-reader img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
+.page-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;position:sticky;top:0;z-index:2;background:#fff;padding:7px;border-radius:12px}.page-controls strong{font-size:14px;color:var(--green);white-space:nowrap}.page-controls .btn{min-width:108px}.warsh-reader{background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:5px;text-align:center;max-height:calc(100vh - 205px);overflow:auto;touch-action:pan-y;user-select:none;-webkit-user-select:none}.warsh-reader img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain;pointer-events:none}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
 footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px;max-height:calc(100vh - 195px)}.page-controls .btn{padding:9px 10px;font-size:12px}}
@@ -255,8 +255,34 @@ async function openReader(juz){
   $("prevMushafPage").disabled=true;$("nextMushafPage").disabled=true;
  }
 }
-$("prevMushafPage").addEventListener("click",()=>{if(warshPageRanges&&currentMushafPage>warshPageRanges[activeJuz-1]){currentMushafPage--;showWarshPage();}});
-$("nextMushafPage").addEventListener("click",()=>{if(warshPageRanges&&currentMushafPage<lastMushafPage){currentMushafPage++;showWarshPage();}});
+function previousWarshPage(){
+ if(warshPageRanges&&currentMushafPage>warshPageRanges[activeJuz-1]){currentMushafPage--;showWarshPage();}
+}
+function nextWarshPage(){
+ if(warshPageRanges&&currentMushafPage<lastMushafPage){currentMushafPage++;showWarshPage();}
+}
+$("prevMushafPage").addEventListener("click",previousWarshPage);
+$("nextMushafPage").addEventListener("click",nextWarshPage);
+// قلب الصفحات بالسحب يميناً ويساراً على الهاتف
+let swipeStartX=0,swipeStartY=0;
+$("warshReader").addEventListener("touchstart",e=>{
+ if(!e.touches||e.touches.length!==1)return;
+ swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;
+},{passive:true});
+$("warshReader").addEventListener("touchend",e=>{
+ if(!e.changedTouches||e.changedTouches.length!==1)return;
+ const dx=e.changedTouches[0].clientX-swipeStartX;
+ const dy=e.changedTouches[0].clientY-swipeStartY;
+ if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25){
+  if(dx<0)nextWarshPage();else previousWarshPage();
+ }
+},{passive:true});
+document.addEventListener("keydown",e=>{
+ if($("readerOverlay").style.display==="block"){
+  if(e.key==="ArrowLeft")nextWarshPage();
+  if(e.key==="ArrowRight")previousWarshPage();
+ }
+});
 $("warshPageImage").addEventListener("error",()=>{$("mushafPageFoot").textContent="تعذر تحميل صورة الصفحة. تحققي من الإنترنت وحاولي مجدداً.";});
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
