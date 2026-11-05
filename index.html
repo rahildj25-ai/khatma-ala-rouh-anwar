@@ -67,7 +67,12 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .done{color:#39804b}
 .note{font-size:13px;color:#777;line-height:1.8}
 footer{padding:25px;color:#71816f}
-.reader-overlay{display:none;position:fixed;inset:0;background:#f6f3ed;z-index:9999;overflow:auto;padding:14px}.reader-panel{max-width:850px;margin:0 auto;background:white;border-radius:16px;padding:18px;text-align:right}.reader-panel h2{text-align:center}.reader-ayah{font-family:Tahoma,Arial,sans-serif;font-size:23px;line-height:2.15;padding:9px 3px;border-bottom:1px solid #edf0eb;text-align:justify}.reader-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;background:#f6f3ed;padding:8px;z-index:2}.reader-toolbar button{margin:2px}</style>
+.reader-overlay{display:none;position:fixed;inset:0;background:#f6f3ed;z-index:9999;overflow:auto;padding:14px}.reader-panel{max-width:850px;margin:0 auto;background:white;border-radius:16px;padding:18px;text-align:right}.reader-panel h2{text-align:center}.reader-ayah{font-family:"WarshMushaf",serif;font-size:22px;line-height:2.1;text-align:justify;margin:0}
+.mushaf-page{width:min(100%,390px);min-height:560px;margin:18px auto;padding:25px 20px 35px;background:#fffdf5;border:5px double #9b8657;border-radius:4px;box-shadow:0 3px 14px #0002;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always}
+.mushaf-page-body{font-family:"WarshMushaf",serif;font-size:22px;line-height:2.25;text-align:justify;color:#18291e}
+.mushaf-page-head{font-size:13px;color:#8a7446;border-bottom:1px solid #b9a477;padding-bottom:7px;margin-bottom:12px;text-align:center}
+.mushaf-page-foot{font-size:12px;color:#8a7446;border-top:1px solid #b9a477;padding-top:7px;margin-top:12px;text-align:center}
+@font-face{font-family:"WarshMushaf";src:url("https://api.quranpedia.net/assets/fonts/warsh/warsh.woff2") format("woff2");font-display:swap}.reader-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;background:#f6f3ed;padding:8px;z-index:2}.reader-toolbar button{margin:2px}</style>
 </head>
 <body>
 
@@ -141,38 +146,56 @@ let warshMushafCache=null;
 async function openJuzReader(juz){
  if(!Number.isInteger(juz)||juz<1||juz>30)return;
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
- $("readerTitle").textContent="الجزء "+juz+" فقط — مصحف ورش عن نافع";
- const box=$("readerContent");box.innerHTML="";box.textContent="جارٍ تحميل آيات الجزء "+juz+" فقط...";
+ $("readerTitle").textContent="الجزء "+juz+" — صفحات مصحف ورش عن نافع";
+ const box=$("readerContent");box.innerHTML="";box.textContent="جارٍ تجهيز صفحات الجزء "+juz+"...";
  try{
-  const start=juzStarts[juz],end=juz<30?juzStarts[juz+1]:[115,1];
-  const selectedSurahs=[];
+  const start=juzStarts[juz],end=juz<30?juzStarts[juz+1]:[115,1],all=[];
   for(let sid=start[0];sid<=Math.min(end[0],114);sid++){
    const response=await fetch("https://api.quranpedia.net/v1/mushafs/4/"+sid);
    if(!response.ok)throw new Error("Surah "+sid+" unavailable");
-   const data=await response.json();
-   const ayahs=Array.isArray(data)?data:(data.ayahs||[]);
-   const from=sid===start[0]?start[1]:1;
-   const to=sid===end[0]?end[1]-1:999;
-   const verses=ayahs.filter(v=>Number(v.number)>=from&&Number(v.number)<=to);
-   if(verses.length)selectedSurahs.push({sid,verses});
-  }
-  if(!selectedSurahs.length)throw new Error("No verses for juz");
-  box.innerHTML="";
-  selectedSurahs.forEach(group=>{
-   const heading=document.createElement("h3");
-   heading.textContent="سورة "+(group.verses[0].surah_name||group.verses[0].surahName||group.sid);
-   box.append(heading);
-   group.verses.forEach(v=>{
-    const p=document.createElement("p");p.className="reader-ayah";
-    p.textContent=v.text+" ﴿"+v.number+"﴾";box.append(p);
+   const data=await response.json(),ayahs=Array.isArray(data)?data:(data.ayahs||[]);
+   const from=sid===start[0]?start[1]:1,to=sid===end[0]?end[1]-1:999;
+   ayahs.filter(v=>Number(v.number)>=from&&Number(v.number)<=to).forEach(v=>{
+    all.push({surah:sid,surahName:data.name||v.surah_name||"",number:Number(v.number),text:v.text,page:Number(v.page_number)||0});
    });
+  }
+  if(!all.length)throw new Error("No verses for juz");
+  const pages=new Map();
+  all.forEach(v=>{
+   const key=v.page||("surah-"+v.surah);
+   if(!pages.has(key))pages.set(key,[]);
+   pages.get(key).push(v);
   });
-  const endNote=document.createElement("p");
-  endNote.style.textAlign="center";endNote.style.fontWeight="bold";
-  endNote.textContent="نهاية الجزء "+juz+" — تقبّل الله منك 🤍";box.append(endNote);
+  box.innerHTML="";
+  let pageIndex=0;
+  pages.forEach((verses,pageKey)=>{
+   pageIndex++;
+   const page=document.createElement("section");page.className="mushaf-page";
+   const body=document.createElement("div");
+   const head=document.createElement("div");head.className="mushaf-page-head";
+   head.textContent="مصحف ورش عن نافع";
+   body.append(head);
+   const textBlock=document.createElement("div");textBlock.className="mushaf-page-body";
+   let previousSurah=0;
+   verses.forEach(v=>{
+    if(v.surah!==previousSurah){
+     const surahTitle=document.createElement("div");
+     surahTitle.style.textAlign="center";surahTitle.style.fontSize="17px";
+     surahTitle.style.margin="8px 0";surahTitle.textContent="﴿ "+v.surahName+" ﴾";
+     textBlock.append(surahTitle);previousSurah=v.surah;
+    }
+    const span=document.createElement("span");
+    span.textContent=v.text+" ۝"+v.number+" ";
+    textBlock.append(span);
+   });
+   body.append(textBlock);page.append(body);
+   const foot=document.createElement("div");foot.className="mushaf-page-foot";
+   foot.textContent="الجزء "+juz+" • الصفحة "+pageIndex;
+   page.append(foot);box.append(page);
+  });
   $("readerOverlay").scrollTop=0;
  }catch(error){
-  box.innerHTML="";box.textContent="ما قدرناش نحملو الجزء "+juz+" وحده الآن. تأكدي من الإنترنت وحاولي مرة أخرى.";
+  box.innerHTML="";box.textContent="تعذر تحميل صفحات الجزء المحدد. حاولي مرة أخرى بعد التأكد من الإنترنت.";
  }
 }
 let state={parts:{},round:1,history:[],closed:false};
