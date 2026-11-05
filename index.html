@@ -133,16 +133,12 @@ footer{padding:25px;color:#71816f}
 <div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true">
  <div class="reader-toolbar">
   <button type="button" id="closeReader">رجوع للموقع</button>
-  <button type="button" id="readerPrev">الصفحة السابقة</button>
-  <span id="readerPageLabel">صفحة 1</span>
-  <button type="button" id="readerNext">الصفحة التالية</button>
  </div>
  <div class="reader-panel">
   <h2 id="readerTitle">مصحف ورش عن نافع</h2>
-  <p class="note" style="text-align:center">صفحات المصحف الشريف — رواية ورش عن نافع</p>
-  <div id="readerContent"></div>
+  <p class="note" style="text-align:center;line-height:2">هذا عارض المصحف الإلكتروني بجامعة الملك سعود، ويعرض صور صفحات المصحف. من داخل العارض اختاري «رواية ورش عن نافع»، ثم اختاري رقم الجزء من قائمة «الجزء» حتى تتصفحي الجزء الصحيح. لا نعتمد على أرقام صفحات مخمّنة.</p>
+  <iframe id="officialMushaf" title="المصحف الإلكتروني - رواية ورش عن نافع" src="https://quran.ksu.edu.sa/index.php?l=ar" style="width:100%;height:78vh;min-height:650px;border:0;background:white" loading="lazy" allowfullscreen></iframe>
  </div>
-</div>
 
 <script>
 (function(){
@@ -153,28 +149,13 @@ const KEY="khatma_anwar_local_v2";
 const juzStarts=[null,[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
-let warshMushafCache=null;
-const juzPageStarts=[0,1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
-let activeJuz=1,currentMushafPage=1;
-function showMushafPage(){
- const start=juzPageStarts[activeJuz],end=activeJuz===30?604:juzPageStarts[activeJuz+1]-1;
- const frame=document.createElement("iframe");frame.className="mushaf-pdf";
- frame.title="صفحة "+currentMushafPage+" من مصحف ورش";
- frame.src="https://pdf.quran.ws/warsh/page/"+currentMushafPage+"/";
- const box=$("readerContent");box.innerHTML="";
- const page=document.createElement("div");page.className="mushaf-page";page.append(frame);box.append(page);
- $("readerPageLabel").textContent="صفحة "+currentMushafPage+" من "+start+" إلى "+end;
- $("readerPrev").disabled=currentMushafPage<=start;
- $("readerNext").disabled=currentMushafPage>=end;
-}
-$("readerPrev").addEventListener("click",()=>{if(currentMushafPage>juzPageStarts[activeJuz]){currentMushafPage--;showMushafPage();}});
-$("readerNext").addEventListener("click",()=>{const end=activeJuz===30?604:juzPageStarts[activeJuz+1]-1;if(currentMushafPage<end){currentMushafPage++;showMushafPage();}});
-async function openJuzReader(juz){
+let activeJuz=1;
+function openJuzReader(juz){
  if(!Number.isInteger(juz)||juz<1||juz>30)return;
- activeJuz=juz;currentMushafPage=juzPageStarts[juz];
- $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
+ activeJuz=juz;
+ $("readerOverlay").style.display="block";
+ document.body.style.overflow="hidden";
  $("readerTitle").textContent="الجزء "+juz+" — مصحف ورش عن نافع";
- showMushafPage();
 }
 let state={parts:{},round:1,history:[],closed:false};
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==="object")state={...state,...saved};}catch(e){}
