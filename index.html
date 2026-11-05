@@ -69,6 +69,7 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px}.page-controls .btn{padding:9px 10px;font-size:12px}}
+ .dua-list{display:grid;gap:10px;margin-top:14px}.dua-list p{margin:0;padding:12px 14px;line-height:2.1;background:#f7f5ec;border:1px solid #e4ddc9;border-radius:12px;color:var(--green)}
 </style>
 </head>
 <body>
@@ -133,9 +134,22 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   </div>
   <p class="help" id="dhikrStatus" role="status" aria-live="polite">عداد مشترك لجميع المشاركين.</p>
  </section>
- <section class="card">
-  <h2 class="section-head"><span class="ico">🕊️</span> دعاء للفقيد</h2>
-  <p style="line-height:2;margin:0">اللهم ارحم أنور رحمةً واسعة، واغفر له، ونوّر قبره، واجعل القرآن شفيعاً له، واجمعنا به في جنات النعيم.</p>
+ <section class="card" id="duaSection">
+  <h2 class="section-head"><span class="ico">🕊️</span> أدعية للفقيد أنور</h2>
+  <p class="help">اضغطي على الزر باش تخرجيلك مجموعة أدعية تقراي منها.</p>
+  <button class="btn" id="showDuas" type="button" aria-expanded="false">عرض مجموعة الأدعية</button>
+  <div id="duaCollection" class="dua-list" hidden>
+   <p>اللهم اغفر لأنور وارحمه، وعافه واعفُ عنه، وأكرم نزله، ووسّع مدخله.</p>
+   <p>اللهم آنس وحشته، ونوّر قبره، واجعل قبره روضةً من رياض الجنة.</p>
+   <p>اللهم ارفع درجته في المهديين، واخلفه في عقبه في الغابرين، واغفر لنا وله يا رب العالمين.</p>
+   <p>اللهم اجعل القرآن نوراً له في قبره، وشفيعاً له يوم القيامة، وارزقه به أعلى الدرجات.</p>
+   <p>اللهم اجزه عن الإحسان إحساناً، وعن الإساءة عفواً وغفراناً.</p>
+   <p>اللهم أبدله داراً خيراً من داره، وأهلاً خيراً من أهله، وأدخله الجنة وأعذه من عذاب القبر وعذاب النار.</p>
+   <p>اللهم اجعل قبره روضةً من رياض الجنة، ولا تجعله حفرةً من حفر النار.</p>
+   <p>اللهم اربط على قلوب أهله وأحبابه، وارزقهم الصبر والسكينة والرضا بقضائك.</p>
+   <p>اللهم اجمعنا به في جنات النعيم، في مقعد صدق عند مليك مقتدر.</p>
+   <p>اللهم لا تحرمنا أجره، ولا تفتنّا بعده، واغفر لنا وله.</p>
+  </div>
  </section>
  <section class="card">
   <h2 class="section-head"><span class="ico">🗂️</span> سجل الختمات السابقة</h2>
@@ -164,6 +178,10 @@ const SUPABASE_URL="https://quckxhqimzqdalzyzciu.supabase.co";
 const SUPABASE_KEY="sb_publishable_VX9pjIkafY_hieXwg_dguA_nCcvIxVF";
 const TOKEN_KEY="anwar_khatma_claims_v1";
 const DHIKR_DEVICE_KEY="anwar_dhikr_device_v1";
+const DHIKR_QUEUE_KEY="anwar_dhikr_pending_v2";
+const readLocal=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||"null")??d}catch(e){return d}};
+const writeLocal=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let dhikrQueue=readLocal(DHIKR_QUEUE_KEY,[]);
 let dhikrDeviceId=localStorage.getItem(DHIKR_DEVICE_KEY);
 if(!dhikrDeviceId){dhikrDeviceId=crypto.randomUUID();localStorage.setItem(DHIKR_DEVICE_KEY,dhikrDeviceId);}
 const KEY="khatma_anwar_local_v3", OLD_KEY="khatma_anwar_local_v2";
@@ -323,30 +341,31 @@ let dhikrBusy={istighfar:false,salawat:false};
 async function refreshDhikr(){
  try{
   const rows=await rpc("get_dhikr_count_summary",{p_device_id:dhikrDeviceId});
-  (rows||[]).forEach(row=>{
-   if(row.dhikr_type==="istighfar"){
-    $("istighfarTotal").textContent=Number(row.total_count||0).toLocaleString("ar");
-    $("istighfarMine").textContent=Number(row.my_count||0).toLocaleString("ar");
-   }else if(row.dhikr_type==="salawat"){
-    $("salawatTotal").textContent=Number(row.total_count||0).toLocaleString("ar");
-    $("salawatMine").textContent=Number(row.my_count||0).toLocaleString("ar");
-   }
-  });
-  $("dhikrStatus").textContent="العداد متصل ومحدّث عند الجميع ✓";
- }catch(e){$("dhikrStatus").textContent="تعذر تحديث العداد حالياً؛ تحققي من الإنترنت.";}
+  const v={istighfar:{total:0,mine:0},salawat:{total:0,mine:0}};
+  (rows||[]).forEach(r=>{if(v[r.dhikr_type])v[r.dhikr_type]={total:Number(r.total_count||0),mine:Number(r.my_count||0)};});
+  for(const q of dhikrQueue){if(v[q.type]){v[q.type].total++;v[q.type].mine++;}}
+  for(const t of ["istighfar","salawat"]){$(t+"Total").textContent=v[t].total.toLocaleString("ar");$(t+"Mine").textContent=v[t].mine.toLocaleString("ar");}
+  writeLocal("anwar_dhikr_snapshot_v1",{istighfar:{total:v.istighfar.total-dhikrQueue.filter(x=>x.type==="istighfar").length,mine:v.istighfar.mine-dhikrQueue.filter(x=>x.type==="istighfar").length},salawat:{total:v.salawat.total-dhikrQueue.filter(x=>x.type==="salawat").length,mine:v.salawat.mine-dhikrQueue.filter(x=>x.type==="salawat").length}});
+  $("dhikrStatus").textContent=dhikrQueue.length?"أذكارك محفوظة محلياً وتنتظر المزامنة.":"العداد متصل ومحدّث عند الجميع ✓";
+ }catch(e){
+  const s=readLocal("anwar_dhikr_snapshot_v1",{istighfar:{total:0,mine:0},salawat:{total:0,mine:0}});
+  for(const t of ["istighfar","salawat"]){const n=dhikrQueue.filter(x=>x.type===t).length;$(t+"Total").textContent=(s[t].total+n).toLocaleString("ar");$(t+"Mine").textContent=(s[t].mine+n).toLocaleString("ar");}
+  $("dhikrStatus").textContent="دون إنترنت: آخر أعداد محفوظة + أذكارك المعلّقة على هذا الجهاز.";
+ }
+}
+async function flushDhikrQueue(){
+ if(!navigator.onLine)return;
+ while(dhikrQueue.length){const q=dhikrQueue[0];try{await rpc("add_dhikr_count",{p_type:q.type,p_device_id:dhikrDeviceId,p_event_id:q.event_id});dhikrQueue.shift();writeLocal(DHIKR_QUEUE_KEY,dhikrQueue);}catch(e){break;}}
+ await refreshDhikr();
 }
 async function addDhikr(type){
- if(dhikrBusy[type])return;
- dhikrBusy[type]=true;
- const button=$(type==="istighfar"?"istighfarTap":"salawatTap");
- button.disabled=true;
- try{
-  await rpc("add_dhikr_count",{p_type:type,p_device_id:dhikrDeviceId});
-  await refreshDhikr();
-  $("dhikrStatus").textContent="تسجّل ذكرك في العداد المشترك، تقبّل الله منك 🤍";
- }catch(e){$("dhikrStatus").textContent="ما تسجّلش العدد بسبب الاتصال. عاودي المحاولة.";}
- finally{dhikrBusy[type]=false;button.disabled=false;}
+ if(dhikrBusy[type])return;dhikrBusy[type]=true;
+ const b=$(type==="istighfar"?"istighfarTap":"salawatTap");b.disabled=true;
+ try{dhikrQueue.push({type,event_id:crypto.randomUUID()});writeLocal(DHIKR_QUEUE_KEY,dhikrQueue);await refreshDhikr();if(navigator.onLine)await flushDhikrQueue();}
+ catch(e){$("dhikrStatus").textContent="تعذر حفظ الذكر على هذا الجهاز.";}
+ finally{dhikrBusy[type]=false;b.disabled=false;}
 }
+$("showDuas").addEventListener("click",()=>{const box=$("duaCollection"),open=box.hidden;box.hidden=!open;$("showDuas").textContent=open?"إخفاء الأدعية":"عرض مجموعة الأدعية";$("showDuas").setAttribute("aria-expanded",String(open));});
 $("istighfarTap").addEventListener("click",()=>addDhikr("istighfar"));
 $("salawatTap").addEventListener("click",()=>addDhikr("salawat"));
 let activeJuz=1,warshPageRanges=null,warshLayoutPromise=null;
