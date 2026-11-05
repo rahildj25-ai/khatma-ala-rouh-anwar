@@ -394,6 +394,26 @@ async function getWarshLayout(){
  });
  return warshLayoutPromise;
 }
+async function autoCacheWarshPages(){
+ if(!("caches" in window)||!navigator.onLine)return;
+ const status=$("offlineStatus"),button=$("downloadMushaf");
+ try{
+  if(navigator.storage?.persist)await navigator.storage.persist();
+  if(navigator.storage?.estimate){const e=await navigator.storage.estimate();if(e.quota&&e.quota-e.usage<45*1024*1024){status.textContent="مساحة التخزين المتاحة غير كافية لتحميل المصحف كاملاً تلقائياً؛ يمكن حفظ الصفحات تدريجياً.";return;}}
+  const cache=await caches.open("anwar-warsh-pages-v1");
+  let saved=0;
+  for(let page=1;page<=604;page++){
+   if(!navigator.onLine){status.textContent="توقف الحفظ مؤقتاً لانقطاع الإنترنت؛ سيكمل تلقائياً عند عودته.";return;}
+   const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
+   if(await cache.match(url)){saved++;continue;}
+   const response=await fetch(url);if(!response.ok)throw new Error("page "+page);
+   await cache.put(url,response.clone());saved++;
+   if(saved%10===0)status.textContent="جارٍ حفظ صفحات المصحف تلقائياً: "+saved+"/604";
+  }
+  status.textContent="اكتمل حفظ صفحات المصحف الـ604 على هذا الجهاز. يمكنك القراءة دون إنترنت.";
+  if(button)button.textContent="صفحات المصحف محفوظة ✓";
+ }catch(e){status.textContent="تعذر إكمال حفظ الصفحات حالياً؛ سيُعاد المحاولة عند الاتصال.";}
+}
 async function loadWarshPageSvg(page){
  const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
  if("caches" in window){
