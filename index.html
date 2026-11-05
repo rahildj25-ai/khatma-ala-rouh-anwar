@@ -65,10 +65,10 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 .reader-panel{max-width:980px;margin:auto}
 .reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 15px;margin-bottom:10px}
 .reader-head h2{margin:0;color:var(--green);font-size:18px}
-.page-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;position:sticky;top:0;z-index:2;background:#fff;padding:7px;border-radius:12px}.page-controls strong{font-size:14px;color:var(--green);white-space:nowrap}.page-controls .btn{min-width:108px}.warsh-reader{background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:5px;text-align:center;max-height:calc(100vh - 205px);overflow:auto;touch-action:pan-y;user-select:none;-webkit-user-select:none}.warsh-reader img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain;pointer-events:none}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
+.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0;padding:5px;background:#fffdf6;border:1px solid #e2d8c2;border-radius:8px}.warsh-page img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
 footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
-@media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px;max-height:calc(100vh - 195px)}.page-controls .btn{padding:9px 10px;font-size:12px}}
+@media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px}.page-controls .btn{padding:9px 10px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -109,8 +109,8 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
  </section>
  <section class="card">
   <h2 class="section-head"><span class="ico">📚</span> قراءة الجزء</h2>
-  <p class="help">بعد الحجز، اضغطي «اقرأ الجزء». يفتح لك عارض آيات الرسمي ويعرض رقم الجزء الذي حجزتيه لتختاريه من قائمة الأجزاء داخله.</p>
-  <div class="notice">موقع آيات الرسمي يتيح اختيار رواية ورش والتصفح حسب الجزء. لا نعتمد أرقام صفحات غير مؤكدة حتى لا تختلط حدود الأجزاء.</div>
+  <p class="help">بعد الحجز، اضغطي «اقرأ الجزء». ستظهر صفحات الجزء المحجوز فقط، مرتبة تحت بعضها من البداية إلى النهاية.</p>
+  <div class="notice">لا يمكن الانتقال إلى جزء آخر من داخل عارض القراءة؛ كل مشارك يشاهد صفحات الجزء الذي حجزه فقط.</div>
  </section>
  <section class="card">
   <h2 class="section-head"><span class="ico">🕊️</span> دعاء للفقيد</h2>
@@ -129,15 +129,8 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <h2 id="readerTitle">مصحف ورش عن نافع</h2>
    <button class="btn small" id="closeReader" type="button">رجوع للموقع</button>
   </div>
-  <div class="notice" id="readerNotice">يتم تحميل نص رواية ورش وتقسيمه حسب حدود الجزء المختار.</div>
-  <div class="page-controls">
-   <button class="btn small" id="prevMushafPage" type="button">الصفحة السابقة</button>
-   <strong id="mushafPageLabel">صفحة —</strong>
-   <button class="btn small" id="nextMushafPage" type="button">الصفحة التالية</button>
-  </div>
-  <div id="warshReader" class="warsh-reader" aria-live="polite">
-   <img id="warshPageImage" alt="صفحة من مصحف ورش عن نافع" />
-  </div>
+  <div class="notice" id="readerNotice">تظهر هنا صفحات الجزء الذي حجزه هذا المشارك فقط، مرتبة من الأعلى إلى الأسفل.</div>
+  <div id="warshReader" class="warsh-reader" aria-live="polite"></div>
   <p class="page-foot" id="mushafPageFoot"></p>
  </div>
 </div>
@@ -215,7 +208,7 @@ function updateSelection(){
  const n=document.querySelectorAll(".part-choice:checked").length;
  $("selectedCount").textContent=n?n+" جزء محدد للحجز":"لم تختاري أي جزء بعد";
 }
-let activeJuz=1,currentMushafPage=1,lastMushafPage=604,warshPageRanges=null;
+let activeJuz=1,warshPageRanges=null;
 let warshLayoutPromise=null;
 async function getWarshPageRanges(){
  if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("layout unavailable");return r.json();}).then(d=>{
@@ -227,63 +220,37 @@ async function getWarshPageRanges(){
  });
  return warshLayoutPromise;
 }
-function showWarshPage(){
- const img=$("warshPageImage");
- img.src="https://cdn.jsdelivr.net/gh/QuranHub/quran-pages-images@main/ayat/warsh/"+currentMushafPage+".png";
- img.alt="مصحف ورش عن نافع — الصفحة "+currentMushafPage;
- $("mushafPageLabel").textContent="صفحة "+currentMushafPage+" من 604";
- $("mushafPageFoot").textContent="الجزء "+activeJuz+" — صفحة "+currentMushafPage+" من صفحات الجزء المحدد";
- $("prevMushafPage").disabled=currentMushafPage<=warshPageRanges[activeJuz-1];
- $("nextMushafPage").disabled=currentMushafPage>=lastMushafPage;
-}
 async function openReader(juz){
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
- $("readerNotice").textContent="تحميل صفحات مصحف ورش وتحديد بداية ونهاية الجزء من فهرس الصفحات.";
+ $("readerNotice").textContent="يتم عرض صفحات الجزء المحجوز فقط، متتابعة من الأعلى إلى الأسفل.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
+ const reader=$("warshReader");reader.innerHTML="";
  $("mushafPageFoot").textContent="جاري تحديد صفحات الجزء...";
- $("warshPageImage").removeAttribute("src");
  try{
   warshPageRanges=await getWarshPageRanges();
-  currentMushafPage=warshPageRanges[activeJuz-1];
-  lastMushafPage=activeJuz===30?604:warshPageRanges[activeJuz]-1;
-  if(lastMushafPage<currentMushafPage)throw new Error("invalid range");
-  showWarshPage();
+  const first=warshPageRanges[activeJuz-1];
+  const last=activeJuz===30?604:warshPageRanges[activeJuz]-1;
+  if(last<first)throw new Error("invalid range");
+  const fragment=document.createDocumentFragment();
+  for(let page=first;page<=last;page++){
+   const figure=document.createElement("figure");figure.className="warsh-page";
+   const img=document.createElement("img");
+   img.alt="مصحف ورش عن نافع — الجزء "+activeJuz+" — الصفحة "+page;
+   img.loading=page===first?"eager":"lazy";
+   img.decoding="async";
+   img.src="https://cdn.jsdelivr.net/gh/QuranHub/quran-pages-images@main/ayat/warsh/"+page+".png";
+   img.addEventListener("error",()=>{const msg=document.createElement("figcaption");msg.textContent="تعذر تحميل صورة الصفحة "+page+"؛ تحققي من الاتصال بالإنترنت.";figure.append(msg);});
+   figure.append(img);
+   const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);
+   fragment.append(figure);
+  }
+  reader.append(fragment);
+  $("mushafPageFoot").textContent="الجزء "+activeJuz+" فقط — من الصفحة "+first+" إلى الصفحة "+last+".";
  }catch(e){
-  $("mushafPageLabel").textContent="—";
-  $("mushafPageFoot").textContent="تعذر تحميل فهرس حدود أجزاء ورش. لم نستخدم أرقاماً تقديرية.";
-  $("prevMushafPage").disabled=true;$("nextMushafPage").disabled=true;
+  $("mushafPageFoot").textContent="تعذر تحميل فهرس حدود أجزاء ورش. لم نعرض صفحات من أجزاء أخرى.";
  }
 }
-function previousWarshPage(){
- if(warshPageRanges&&currentMushafPage>warshPageRanges[activeJuz-1]){currentMushafPage--;showWarshPage();}
-}
-function nextWarshPage(){
- if(warshPageRanges&&currentMushafPage<lastMushafPage){currentMushafPage++;showWarshPage();}
-}
-$("prevMushafPage").addEventListener("click",previousWarshPage);
-$("nextMushafPage").addEventListener("click",nextWarshPage);
-// قلب الصفحات بالسحب يميناً ويساراً على الهاتف
-let swipeStartX=0,swipeStartY=0;
-$("warshReader").addEventListener("touchstart",e=>{
- if(!e.touches||e.touches.length!==1)return;
- swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;
-},{passive:true});
-$("warshReader").addEventListener("touchend",e=>{
- if(!e.changedTouches||e.changedTouches.length!==1)return;
- const dx=e.changedTouches[0].clientX-swipeStartX;
- const dy=e.changedTouches[0].clientY-swipeStartY;
- if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25){
-  if(dx<0)nextWarshPage();else previousWarshPage();
- }
-},{passive:true});
-document.addEventListener("keydown",e=>{
- if($("readerOverlay").style.display==="block"){
-  if(e.key==="ArrowLeft")nextWarshPage();
-  if(e.key==="ArrowRight")previousWarshPage();
- }
-});
-$("warshPageImage").addEventListener("error",()=>{$("mushafPageFoot").textContent="تعذر تحميل صورة الصفحة. تحققي من الإنترنت وحاولي مجدداً.";});
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
 $("readerOverlay").addEventListener("click",e=>{if(e.target===$("readerOverlay"))closeReader();});
