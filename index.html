@@ -72,7 +72,11 @@ footer{padding:25px;color:#71816f}
 .mushaf-page-body{font-family:"WarshMushaf",serif;font-size:22px;line-height:2.25;text-align:justify;color:#18291e}
 .mushaf-page-head{font-size:13px;color:#8a7446;border-bottom:1px solid #b9a477;padding-bottom:7px;margin-bottom:12px;text-align:center}
 .mushaf-page-foot{font-size:12px;color:#8a7446;border-top:1px solid #b9a477;padding-top:7px;margin-top:12px;text-align:center}
-@font-face{font-family:"WarshMushaf";src:url("https://api.quranpedia.net/assets/fonts/warsh/warsh.woff2") format("woff2");font-display:swap}.reader-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;background:#f6f3ed;padding:8px;z-index:2}.reader-toolbar button{margin:2px}</style>
+@font-face{font-family:"WarshMushaf";src:url("https://api.quranpedia.net/assets/fonts/warsh/warsh.woff2") format("woff2");font-display:swap}.reader-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;background:#f6f3ed;padding:8px;z-index:2}.reader-toolbar button{margin:2px}.mushaf-page{width:min(100%,430px);height:min(78vh,760px);min-height:540px;margin:12px auto;background:#fff;border:1px solid #d8cba8;box-shadow:0 4px 18px #0002;padding:0;display:block}
+.mushaf-pdf{width:100%;height:100%;border:0;background:#fff}
+.mushaf-controls{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;padding:8px}
+#readerContent{padding:0!important}
+</style>
 </head>
 <body>
 
@@ -127,11 +131,18 @@ footer{padding:25px;color:#71816f}
   صدقة ودعاء على روح فقيدنا أنور 🤍
 </footer>
 <div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true">
- <div class="reader-toolbar"><button type="button" id="closeReader">رجوع للموقع</button></div>
- <div class="reader-panel"><h2 id="readerTitle">مصحف ورش</h2>
- <p class="note" style="text-align:center">مصحف ورش عن نافع — النص بالتشكيل من الموسوعة القرآنية الشاملة</p>
- <div id="readerContent" style="text-align:center;padding:25px">جارٍ تحميل الجزء...</div></div>
-</div>
+ <div class="reader-toolbar">
+  <button type="button" id="closeReader">رجوع للموقع</button>
+  <button type="button" id="readerPrev">الصفحة السابقة</button>
+  <span id="readerPageLabel">صفحة 1</span>
+  <button type="button" id="readerNext">الصفحة التالية</button>
+ </div>
+ <div class="reader-panel">
+  <h2 id="readerTitle">مصحف ورش عن نافع</h2>
+  <p class="note" style="text-align:center">صفحات المصحف الشريف — رواية ورش عن نافع</p>
+  <div id="readerContent"></div>
+ </div>
+</div>>
 
 <script>
 (function(){
@@ -143,60 +154,27 @@ const juzStarts=[null,[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111]
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
 let warshMushafCache=null;
+const juzPageStarts=[0,1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
+let activeJuz=1,currentMushafPage=1;
+function showMushafPage(){
+ const start=juzPageStarts[activeJuz],end=activeJuz===30?604:juzPageStarts[activeJuz+1]-1;
+ const frame=document.createElement("iframe");frame.className="mushaf-pdf";
+ frame.title="صفحة "+currentMushafPage+" من مصحف ورش";
+ frame.src="https://pdf.quran.ws/warsh/page/"+currentMushafPage+"/";
+ const box=$("readerContent");box.innerHTML="";
+ const page=document.createElement("div");page.className="mushaf-page";page.append(frame);box.append(page);
+ $("readerPageLabel").textContent="صفحة "+currentMushafPage+" من "+start+" إلى "+end;
+ $("readerPrev").disabled=currentMushafPage<=start;
+ $("readerNext").disabled=currentMushafPage>=end;
+}
+$("readerPrev").addEventListener("click",()=>{if(currentMushafPage>juzPageStarts[activeJuz]){currentMushafPage--;showMushafPage();}});
+$("readerNext").addEventListener("click",()=>{const end=activeJuz===30?604:juzPageStarts[activeJuz+1]-1;if(currentMushafPage<end){currentMushafPage++;showMushafPage();}});
 async function openJuzReader(juz){
  if(!Number.isInteger(juz)||juz<1||juz>30)return;
+ activeJuz=juz;currentMushafPage=juzPageStarts[juz];
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
- $("readerTitle").textContent="الجزء "+juz+" — صفحات مصحف ورش عن نافع";
- const box=$("readerContent");box.innerHTML="";box.textContent="جارٍ تجهيز صفحات الجزء "+juz+"...";
- try{
-  const start=juzStarts[juz],end=juz<30?juzStarts[juz+1]:[115,1],all=[];
-  for(let sid=start[0];sid<=Math.min(end[0],114);sid++){
-   const response=await fetch("https://api.quranpedia.net/v1/mushafs/4/"+sid);
-   if(!response.ok)throw new Error("Surah "+sid+" unavailable");
-   const data=await response.json(),ayahs=Array.isArray(data)?data:(data.ayahs||[]);
-   const from=sid===start[0]?start[1]:1,to=sid===end[0]?end[1]-1:999;
-   ayahs.filter(v=>Number(v.number)>=from&&Number(v.number)<=to).forEach(v=>{
-    all.push({surah:sid,surahName:data.name||v.surah_name||"",number:Number(v.number),text:v.text,page:Number(v.page_number)||0});
-   });
-  }
-  if(!all.length)throw new Error("No verses for juz");
-  const pages=new Map();
-  all.forEach(v=>{
-   const key=v.page||("surah-"+v.surah);
-   if(!pages.has(key))pages.set(key,[]);
-   pages.get(key).push(v);
-  });
-  box.innerHTML="";
-  let pageIndex=0;
-  pages.forEach((verses,pageKey)=>{
-   pageIndex++;
-   const page=document.createElement("section");page.className="mushaf-page";
-   const body=document.createElement("div");
-   const head=document.createElement("div");head.className="mushaf-page-head";
-   head.textContent="مصحف ورش عن نافع";
-   body.append(head);
-   const textBlock=document.createElement("div");textBlock.className="mushaf-page-body";
-   let previousSurah=0;
-   verses.forEach(v=>{
-    if(v.surah!==previousSurah){
-     const surahTitle=document.createElement("div");
-     surahTitle.style.textAlign="center";surahTitle.style.fontSize="17px";
-     surahTitle.style.margin="8px 0";surahTitle.textContent="﴿ "+v.surahName+" ﴾";
-     textBlock.append(surahTitle);previousSurah=v.surah;
-    }
-    const span=document.createElement("span");
-    span.textContent=v.text+" ۝"+v.number+" ";
-    textBlock.append(span);
-   });
-   body.append(textBlock);page.append(body);
-   const foot=document.createElement("div");foot.className="mushaf-page-foot";
-   foot.textContent="الجزء "+juz+" • الصفحة "+pageIndex;
-   page.append(foot);box.append(page);
-  });
-  $("readerOverlay").scrollTop=0;
- }catch(error){
-  box.innerHTML="";box.textContent="تعذر تحميل صفحات الجزء المحدد. حاولي مرة أخرى بعد التأكد من الإنترنت.";
- }
+ $("readerTitle").textContent="الجزء "+juz+" — مصحف ورش عن نافع";
+ showMushafPage();
 }
 let state={parts:{},round:1,history:[],closed:false};
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==="object")state={...state,...saved};}catch(e){}
