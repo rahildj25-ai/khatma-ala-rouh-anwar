@@ -387,12 +387,15 @@ async function loadWarshPageSvg(page){
  return source;
 }
 async function renderFullWarshPage(page){
- const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
- await loadWarshPageSvg(page);
+ const source=await loadWarshPageSvg(page);
+ const blob=new Blob([source],{type:"image/svg+xml;charset=utf-8"});
+ const objectUrl=URL.createObjectURL(blob);
  const img=document.createElement("img");
  img.className="mushaf-page-image";
  img.alt="صفحة "+page+" من المصحف الشريف برواية ورش عن نافع";
- img.loading="lazy";img.decoding="async";img.src=url;
+ img.loading="lazy";img.decoding="async";img.src=objectUrl;
+ img.addEventListener("load",()=>URL.revokeObjectURL(objectUrl),{once:true});
+ img.addEventListener("error",()=>URL.revokeObjectURL(objectUrl),{once:true});
  return img;
 }
 async function openReader(juz){
