@@ -299,9 +299,9 @@ $("downloadMushaf").addEventListener("click",async()=>{
  const button=$("downloadMushaf"),status=$("offlineStatus");
  if(!("caches" in window)){status.textContent="هذا المتصفح لا يدعم حفظ الصفحات دون إنترنت.";return;}
  button.disabled=true;
+ let saved=0;
  try{
   const cache=await caches.open("anwar-warsh-pages-v1");
-  let saved=0;
   for(let page=1;page<=604;page++){
    const url=new URL("warsh/"+page+".png",location.href).href;
    if(await cache.match(url)){saved++;status.textContent="الصفحات المحفوظة: "+saved+"/604";continue;}
