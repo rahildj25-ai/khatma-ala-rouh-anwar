@@ -1,4 +1,4 @@
-const SHELL_CACHE="anwar-shell-v2";
+const SHELL_CACHE="anwar-shell-v3";
 const PAGE_CACHE="anwar-warsh-pages-v1";
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(SHELL_CACHE).then(cache=>cache.addAll(["./","./index.html"])).then(()=>self.skipWaiting()));
