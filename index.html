@@ -313,7 +313,11 @@ async function getWarshLayout(){
   const juzOffsets=juzAyahs.map(i=>d.ayah_starts[i]);
   if(juzOffsets.some((v,i)=>!Number.isFinite(v)||(i&&v<=juzOffsets[i-1])))throw new Error("مواضع بدايات الأجزاء غير صحيحة");
   const pageAt=pos=>{let lo=0,hi=d.page_starts.length;while(lo<hi){const mid=(lo+hi)>>1;if(d.page_starts[mid]<=pos)lo=mid+1;else hi=mid;}return lo;};
-  return {data:d,juzAyahs,juzOffsets,pageAt,refs};
+  // Detect every Warsh page that contains the end of one juz and the start of the next.
+  // Such a page is shown in both juz, with each view clipped to its own ayat.
+  const sharedPages=new Set();
+  juzOffsets.slice(1).forEach(offset=>{const before=pageAt(offset-1),after=pageAt(offset);if(before===after)sharedPages.add(after);});
+  return {data:d,juzAyahs,juzOffsets,pageAt,refs,sharedPages};
  });
  return warshLayoutPromise;
 }
@@ -360,7 +364,7 @@ async function openReader(juz){
   const fragment=document.createDocumentFragment();
   for(let page=first;page<=last;page++){
    const figure=document.createElement("figure");figure.className="warsh-page";
-   if([121,201,502].includes(page)){
+   if(layout.sharedPages.has(page)){
     const svg=await renderSharedWarshPage(page,layout,startAyah,endAyah);
     figure.append(svg);
    }else{
