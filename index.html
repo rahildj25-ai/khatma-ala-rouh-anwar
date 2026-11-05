@@ -65,7 +65,7 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 .reader-panel{max-width:980px;margin:auto}
 .reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 15px;margin-bottom:10px}
 .reader-head h2{margin:0;color:var(--green);font-size:18px}
-.offline-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:12px 0;padding:12px;background:#f4f7f2;border-radius:12px}.offline-tools span{font-size:12px;color:var(--muted);text-align:center}.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0;padding:5px;background:#fffdf6;border:1px solid #e2d8c2;border-radius:8px}.warsh-page img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
+.offline-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:12px 0;padding:12px;background:#f4f7f2;border-radius:12px}.offline-tools span{font-size:12px;color:var(--muted);text-align:center}.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0 auto;padding:10px;background:#fffdf6;border:2px solid #c7b58d;border-radius:4px;box-shadow:0 3px 12px #3b2d1718;max-width:880px}.warsh-page img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.warsh-page .mushaf-page-image{background:#fffdf6}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
 footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px}.page-controls .btn{padding:9px 10px;font-size:12px}}
@@ -112,6 +112,27 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <p class="help">بعد الحجز، اضغطي «اقرأ الجزء». ستظهر صفحات الجزء المحجوز فقط، مرتبة تحت بعضها من البداية إلى النهاية.</p>
   <div class="notice">لا يمكن الانتقال إلى جزء آخر من داخل عارض القراءة؛ كل مشارك يشاهد صفحات الجزء الذي حجزه فقط.</div>
  </section>
+ <section class="card" id="dhikrSection">
+  <h2 class="section-head"><span class="ico">📿</span> المسبحة الجماعية</h2>
+  <p class="help">اختاري نوع الذكر، وكل ضغطة تتسجل في العداد المشترك وتظهر عند جميع المشاركين.</p>
+  <div class="parts" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+   <article class="part" style="padding:18px">
+    <strong>مسبحة الاستغفار</strong>
+    <p style="font-size:19px;line-height:2.1;color:var(--green);min-height:88px">أستغفر الله العظيم وأتوب إليه</p>
+    <div class="stat"><strong id="istighfarTotal">0</strong><span>مجموع استغفار الجميع</span></div>
+    <p class="help">عددك: <strong id="istighfarMine">0</strong></p>
+    <button class="btn" style="width:100%" id="istighfarTap" type="button">سبّحي +1</button>
+   </article>
+   <article class="part" style="padding:18px">
+    <strong>مسبحة الصلاة على النبي ﷺ</strong>
+    <p style="font-size:19px;line-height:2.1;color:var(--green);min-height:88px">اللهم صل وسلم وبارك على نبينا محمد</p>
+    <div class="stat"><strong id="salawatTotal">0</strong><span>مجموع الصلاة على النبي</span></div>
+    <p class="help">عددك: <strong id="salawatMine">0</strong></p>
+    <button class="btn" style="width:100%" id="salawatTap" type="button">صلّي +1</button>
+   </article>
+  </div>
+  <p class="help" id="dhikrStatus" role="status" aria-live="polite">عداد مشترك لجميع المشاركين.</p>
+ </section>
  <section class="card">
   <h2 class="section-head"><span class="ico">🕊️</span> دعاء للفقيد</h2>
   <p style="line-height:2;margin:0">اللهم ارحم أنور رحمةً واسعة، واغفر له، ونوّر قبره، واجعل القرآن شفيعاً له، واجمعنا به في جنات النعيم.</p>
@@ -142,6 +163,9 @@ const $=id=>document.getElementById(id);
 const SUPABASE_URL="https://quckxhqimzqdalzyzciu.supabase.co";
 const SUPABASE_KEY="sb_publishable_VX9pjIkafY_hieXwg_dguA_nCcvIxVF";
 const TOKEN_KEY="anwar_khatma_claims_v1";
+const DHIKR_DEVICE_KEY="anwar_dhikr_device_v1";
+let dhikrDeviceId=localStorage.getItem(DHIKR_DEVICE_KEY);
+if(!dhikrDeviceId){dhikrDeviceId=crypto.randomUUID();localStorage.setItem(DHIKR_DEVICE_KEY,dhikrDeviceId);}
 const KEY="khatma_anwar_local_v3", OLD_KEY="khatma_anwar_local_v2";
 const partsBox=$("parts"), nameInput=$("name"), connection=$("connection");
 let state={parts:{},round:1,history:[]},refreshing=false;
@@ -295,6 +319,36 @@ async function cancelPart(i){
   else alert("تعذر إلغاء الحجز؛ ربما تم إتمامه بالفعل.");
  }catch(e){alert("تعذر إلغاء الحجز بسبب الاتصال.");}
 }
+let dhikrBusy={istighfar:false,salawat:false};
+async function refreshDhikr(){
+ try{
+  const rows=await rpc("get_dhikr_count_summary",{p_device_id:dhikrDeviceId});
+  (rows||[]).forEach(row=>{
+   if(row.dhikr_type==="istighfar"){
+    $("istighfarTotal").textContent=Number(row.total_count||0).toLocaleString("ar");
+    $("istighfarMine").textContent=Number(row.my_count||0).toLocaleString("ar");
+   }else if(row.dhikr_type==="salawat"){
+    $("salawatTotal").textContent=Number(row.total_count||0).toLocaleString("ar");
+    $("salawatMine").textContent=Number(row.my_count||0).toLocaleString("ar");
+   }
+  });
+  $("dhikrStatus").textContent="العداد متصل ومحدّث عند الجميع ✓";
+ }catch(e){$("dhikrStatus").textContent="تعذر تحديث العداد حالياً؛ تحققي من الإنترنت.";}
+}
+async function addDhikr(type){
+ if(dhikrBusy[type])return;
+ dhikrBusy[type]=true;
+ const button=$(type==="istighfar"?"istighfarTap":"salawatTap");
+ button.disabled=true;
+ try{
+  await rpc("add_dhikr_count",{p_type:type,p_device_id:dhikrDeviceId});
+  await refreshDhikr();
+  $("dhikrStatus").textContent="تسجّل ذكرك في العداد المشترك، تقبّل الله منك 🤍";
+ }catch(e){$("dhikrStatus").textContent="ما تسجّلش العدد بسبب الاتصال. عاودي المحاولة.";}
+ finally{dhikrBusy[type]=false;button.disabled=false;}
+}
+$("istighfarTap").addEventListener("click",()=>addDhikr("istighfar"));
+$("salawatTap").addEventListener("click",()=>addDhikr("salawat"));
 let activeJuz=1,warshPageRanges=null,warshLayoutPromise=null;
 async function getWarshLayout(){
  if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("تعذر تحميل فهرس ورش");return r.json();}).then(d=>{
@@ -333,13 +387,13 @@ async function loadWarshPageSvg(page){
  return source;
 }
 async function renderFullWarshPage(page){
- const source=await loadWarshPageSvg(page);
- const parsed=new DOMParser().parseFromString(source,"image/svg+xml");
- const root=parsed.documentElement;
- if(root.localName!=="svg"||parsed.querySelector("parsererror"))throw new Error("ملف صفحة ورش غير صالح");
- root.removeAttribute("width");root.removeAttribute("height");
- root.setAttribute("style","display:block;width:100%;height:auto;max-width:850px;margin:auto;background:#fffdf6");
- return document.importNode(root,true);
+ const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
+ await loadWarshPageSvg(page);
+ const img=document.createElement("img");
+ img.className="mushaf-page-image";
+ img.alt="صفحة "+page+" من المصحف الشريف برواية ورش عن نافع";
+ img.loading="lazy";img.decoding="async";img.src=url;
+ return img;
 }
 async function openReader(juz){
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
@@ -402,7 +456,9 @@ $("downloadMushaf").addEventListener("click",async()=>{
  connection.textContent="جارٍ الاتصال بالختمة المشتركة...";
  await migrateOldLocalData();
  await refresh(true);
+ await refreshDhikr();
  setInterval(()=>refresh(false),5000);
+ setInterval(()=>refreshDhikr(),5000);
 })();
 })();
 </script>
