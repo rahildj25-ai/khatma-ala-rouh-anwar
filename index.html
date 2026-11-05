@@ -296,34 +296,73 @@ async function cancelPart(i){
  }catch(e){alert("تعذر إلغاء الحجز بسبب الاتصال.");}
 }
 let activeJuz=1,warshPageRanges=null,warshLayoutPromise=null;
-async function getWarshPageRanges(){
- // Page-start index independently checked against the 604-page Warsh mushaf
- // index published by Assabile: https://ar.assabile.com/quran/mushaf/warsh
- // The listed start pages for Juz 1..30 are transcribed directly from that index.
- const verifiedStarts=[1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
- if(!warshLayoutPromise)warshLayoutPromise=Promise.resolve(verifiedStarts);
+async function getWarshLayout(){
+ if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("تعذر تحميل فهرس ورش");return r.json();}).then(d=>{
+  if(!Array.isArray(d.juz_starts)||d.juz_starts.length!==30||!Array.isArray(d.ayah_starts)||!Array.isArray(d.page_starts)||!Array.isArray(d.surahs))throw new Error("فهرس ورش غير مكتمل");
+  const lower=(arr,value)=>{let lo=0,hi=arr.length;while(lo<hi){const mid=(lo+hi)>>1;if(arr[mid]<value)lo=mid+1;else hi=mid;}return lo;};
+  const pageAt=pos=>lower(d.page_starts,pos);
+  const juzAyahs=d.juz_starts.map(pos=>lower(d.ayah_starts,pos));
+  if(juzAyahs.some((v,i)=>v>=d.ayah_starts.length||(i&&v<=juzAyahs[i-1])))throw new Error("حدود الأجزاء غير صحيحة");
+  if(juzAyahs.some((v,i)=>d.ayah_starts[v]!==d.juz_starts[i]))throw new Error("بداية جزء ليست على حد آية");
+  return {data:d,juzAyahs,pageAt};
+ });
  return warshLayoutPromise;
+}
+async function renderSharedWarshPage(page,layout,startAyah,endAyah){
+ const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
+ const response=await fetch(url);if(!response.ok)throw new Error("تعذر تحميل الصفحة الدقيقة "+page);
+ const source=await response.text();
+ const parsed=new DOMParser().parseFromString(source,"image/svg+xml");
+ const root=parsed.documentElement;
+ if(root.localName!=="svg"||parsed.querySelector("parsererror"))throw new Error("ملف صفحة ورش غير صالح");
+ const content=root.querySelector("#content");
+ if(!content||!content.parentElement)throw new Error("طبقة الصفحة غير مكتملة");
+ const allowed=[];
+ root.querySelectorAll("path.ayahPolygon").forEach(poly=>{
+  const sn=Number(poly.getAttribute("surah")),an=Number(poly.getAttribute("ayah"));
+  const meta=layout.data.surahs[sn-1];
+  if(meta){const idx=meta.first_ayah+an-1;if(idx>=startAyah&&idx<endAyah){const d=poly.getAttribute("d");if(d)allowed.push(d);}}
+ });
+ if(!allowed.length)throw new Error("لم نعثر على آيات هذا الجزء في الصفحة "+page);
+ let defs=root.querySelector("defs");if(!defs){defs=parsed.createElementNS("http://www.w3.org/2000/svg","defs");root.insertBefore(defs,root.firstChild);}
+ const clip=parsed.createElementNS("http://www.w3.org/2000/svg","clipPath");
+ const clipId="juz-clip-"+page;clip.setAttribute("id",clipId);clip.setAttribute("clipPathUnits","userSpaceOnUse");
+ allowed.forEach(d=>{const p=parsed.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("d",d);clip.appendChild(p);});
+ defs.appendChild(clip);
+ content.parentElement.setAttribute("clip-path","url(#"+clipId+")");
+ root.querySelectorAll("path.ayahPolygon").forEach(p=>p.setAttribute("pointer-events","none"));
+ root.removeAttribute("width");root.removeAttribute("height");
+ root.setAttribute("style","display:block;width:100%;height:auto;max-width:850px;margin:auto;background:#fffdf6");
+ return document.importNode(root,true);
 }
 async function openReader(juz){
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
- $("readerNotice").textContent="يتم عرض صفحات الجزء المحجوز فقط، متتابعة من الأعلى إلى الأسفل.";
+ $("readerNotice").textContent="كل صفحة تُعرض بآيات الجزء المحدد فقط، حتى الصفحات المشتركة بين جزأين.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
  const reader=$("warshReader");reader.innerHTML="";
- $("mushafPageFoot").textContent="جاري تحديد صفحات الجزء...";
+ $("mushafPageFoot").textContent="جارٍ التحقق من حدود الجزء...";
  try{
-  warshPageRanges=await getWarshPageRanges();
-  const first=warshPageRanges[activeJuz-1],last=activeJuz===30?604:warshPageRanges[activeJuz]-1;
-  if(last<first)throw new Error("invalid range");
+  const layout=await getWarshLayout();
+  const startAyah=layout.juzAyahs[activeJuz-1],endAyah=activeJuz===30?layout.data.ayah_starts.length:layout.juzAyahs[activeJuz];
+  const first=layout.pageAt(layout.data.juz_starts[activeJuz-1]);
+  const last=activeJuz===30?604:layout.pageAt(layout.data.juz_starts[activeJuz]-1);
+  if(last<first||first<1||last>604)throw new Error("مدى صفحات الجزء غير صالح");
   const fragment=document.createDocumentFragment();
   for(let page=first;page<=last;page++){
    const figure=document.createElement("figure");figure.className="warsh-page";
-   const img=document.createElement("img");img.alt="مصحف ورش عن نافع — الجزء "+activeJuz+" — الصفحة "+page;img.loading=page===first?"eager":"lazy";img.decoding="async";img.src="warsh/"+page+".png";
-   img.addEventListener("error",()=>{const msg=document.createElement("figcaption");msg.textContent="تعذر تحميل صورة الصفحة "+page+"؛ تحققي من الاتصال بالإنترنت.";figure.append(msg);});
-   figure.append(img);const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);fragment.append(figure);
+   if([121,201,502].includes(page)){
+    const svg=await renderSharedWarshPage(page,layout,startAyah,endAyah);
+    figure.append(svg);
+   }else{
+    const img=document.createElement("img");img.alt="مصحف ورش عن نافع — الجزء "+activeJuz+" — الصفحة "+page;img.loading=page===first?"eager":"lazy";img.decoding="async";img.src="warsh/"+page+".png";
+    img.addEventListener("error",()=>{const msg=document.createElement("figcaption");msg.textContent="تعذر تحميل صورة الصفحة "+page+"؛ تحققي من الاتصال بالإنترنت.";figure.append(msg);});
+    figure.append(img);
+   }
+   const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);fragment.append(figure);
   }
-  reader.append(fragment);$("mushafPageFoot").textContent="الجزء "+activeJuz+" فقط — من الصفحة "+first+" إلى الصفحة "+last+".";
- }catch(e){$("mushafPageFoot").textContent="تعذر تحميل فهرس حدود أجزاء ورش. لم نعرض صفحات من أجزاء أخرى.";}
+  reader.append(fragment);$("mushafPageFoot").textContent="الجزء "+activeJuz+" فقط — الصفحات "+first+" إلى "+last+"، والصفحات المشتركة مفصولة بحدود الآيات.";
+ }catch(e){console.error(e);reader.innerHTML="";$("mushafPageFoot").textContent="تعذر التحقق من حدود الجزء بدقة؛ لم نعرض صفحات غير مؤكدة. أعيدي المحاولة مع اتصال بالإنترنت.";}
 }
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
