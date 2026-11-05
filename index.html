@@ -139,46 +139,40 @@ function closeReader(){$("readerOverlay").style.display="none";document.body.sty
 $("closeReader").addEventListener("click",closeReader);
 let warshMushafCache=null;
 async function openJuzReader(juz){
+ if(!Number.isInteger(juz)||juz<1||juz>30)return;
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
  $("readerTitle").textContent="الجزء "+juz+" فقط — مصحف ورش عن نافع";
- const box=$("readerContent");box.innerHTML="";box.textContent="جارٍ تحميل الجزء "+juz+" فقط...";
+ const box=$("readerContent");box.innerHTML="";box.textContent="جارٍ تحميل آيات الجزء "+juz+" فقط...";
  try{
-  if(!warshMushafCache){
-   const response=await fetch("https://api.quranpedia.net/v1/mushafs/4");
-   if(!response.ok)throw new Error("API "+response.status);
-   warshMushafCache=await response.json();
-  }
-  const surahs=warshMushafCache.surahs;
-  if(!Array.isArray(surahs))throw new Error("تعذر قراءة بيانات المصحف");
   const start=juzStarts[juz],end=juz<30?juzStarts[juz+1]:[115,1];
-  const all=[];
-  surahs.forEach(surah=>{
-   const sid=Number(surah.id);
-   (Array.isArray(surah.ayahs)?surah.ayahs:[]).forEach(ayah=>{
-    all.push({surah:sid,surahName:surah.name,number:Number(ayah.number),text:ayah.text});
+  const selectedSurahs=[];
+  for(let sid=start[0];sid<=Math.min(end[0],114);sid++){
+   const response=await fetch("https://api.quranpedia.net/v1/mushafs/4/"+sid);
+   if(!response.ok)throw new Error("Surah "+sid+" unavailable");
+   const data=await response.json();
+   const ayahs=Array.isArray(data)?data:(data.ayahs||[]);
+   const from=sid===start[0]?start[1]:1;
+   const to=sid===end[0]?end[1]-1:999;
+   const verses=ayahs.filter(v=>Number(v.number)>=from&&Number(v.number)<=to);
+   if(verses.length)selectedSurahs.push({sid,verses});
+  }
+  if(!selectedSurahs.length)throw new Error("No verses for juz");
+  box.innerHTML="";
+  selectedSurahs.forEach(group=>{
+   const heading=document.createElement("h3");
+   heading.textContent="سورة "+(group.verses[0].surah_name||group.verses[0].surahName||group.sid);
+   box.append(heading);
+   group.verses.forEach(v=>{
+    const p=document.createElement("p");p.className="reader-ayah";
+    p.textContent=v.text+" ﴿"+v.number+"﴾";box.append(p);
    });
-  });
-  const from=all.findIndex(x=>x.surah===start[0]&&x.number===start[1]);
-  const to=all.findIndex(x=>x.surah===end[0]&&x.number===end[1]);
-  if(from<0)throw new Error("بداية الجزء غير موجودة");
-  const verses=all.slice(from,to<0?all.length:to);
-  if(!verses.length)throw new Error("الجزء فارغ");
-  let previousSurah=0;
-  verses.forEach(ayah=>{
-   if(ayah.surah!==previousSurah){
-    const heading=document.createElement("h3");
-    heading.textContent=ayah.surahName||"السورة "+ayah.surah;
-    box.append(heading);previousSurah=ayah.surah;
-   }
-   const p=document.createElement("p");p.className="reader-ayah";
-   p.textContent=ayah.text+" ﴿"+ayah.number+"﴾";box.append(p);
   });
   const endNote=document.createElement("p");
   endNote.style.textAlign="center";endNote.style.fontWeight="bold";
   endNote.textContent="نهاية الجزء "+juz+" — تقبّل الله منك 🤍";box.append(endNote);
+  $("readerOverlay").scrollTop=0;
  }catch(error){
-  warshMushafCache=null;
-  box.textContent="تعذر تحميل الجزء المحدد. تحققي من الإنترنت وحاولي مرة أخرى.";
+  box.innerHTML="";box.textContent="ما قدرناش نحملو الجزء "+juz+" وحده الآن. تأكدي من الإنترنت وحاولي مرة أخرى.";
  }
 }
 let state={parts:{},round:1,history:[],closed:false};
