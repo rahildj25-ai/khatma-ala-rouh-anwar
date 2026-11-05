@@ -67,7 +67,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .done{color:#39804b}
 .note{font-size:13px;color:#777;line-height:1.8}
 footer{padding:25px;color:#71816f}
-</style>
+.reader-overlay{display:none;position:fixed;inset:0;background:#f6f3ed;z-index:9999;overflow:auto;padding:14px}.reader-panel{max-width:850px;margin:0 auto;background:white;border-radius:16px;padding:18px;text-align:right}.reader-panel h2{text-align:center}.reader-ayah{font-family:Tahoma,Arial,sans-serif;font-size:23px;line-height:2.15;padding:9px 3px;border-bottom:1px solid #edf0eb;text-align:justify}.reader-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;background:#f6f3ed;padding:8px;z-index:2}.reader-toolbar button{margin:2px}</style>
 </head>
 <body>
 
@@ -122,6 +122,12 @@ footer{padding:25px;color:#71816f}
 <footer>
   صدقة ودعاء على روح فقيدنا أنور 🤍
 </footer>
+<div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true">
+ <div class="reader-toolbar"><button type="button" id="closeReader">رجوع للموقع</button></div>
+ <div class="reader-panel"><h2 id="readerTitle">مصحف ورش</h2>
+ <p class="note" style="text-align:center">مصحف ورش عن نافع — النص بالتشكيل من الموسوعة القرآنية الشاملة</p>
+ <div id="readerContent" style="text-align:center;padding:25px">جارٍ تحميل الجزء...</div></div>
+</div>
 
 <script>
 (function(){
@@ -129,6 +135,27 @@ footer{padding:25px;color:#71816f}
 const $=id=>document.getElementById(id);
 const partsBox=$("parts"), connection=$("connection"), nameInput=$("name");
 const KEY="khatma_anwar_local_v2";
+const juzStarts=[null,[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
+function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
+$("closeReader").addEventListener("click",closeReader);
+async function openJuzReader(juz){
+ $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
+ $("readerTitle").textContent="الجزء "+juz+" — مصحف ورش عن نافع";
+ const box=$("readerContent");box.textContent="جارٍ تحميل آيات الجزء...";
+ const first=juzStarts[juz],next=juz<30?juzStarts[juz+1]:[115,1],nodes=[];
+ try{
+  for(let s=first[0];s<=next[0];s++){
+   const res=await fetch("https://api.quranpedia.net/v1/mushafs/4/"+s);
+   if(!res.ok)throw new Error("تعذر الاتصال بمصدر المصحف");
+   const payload=await res.json(), ayahs=Array.isArray(payload)?payload:(payload.ayahs||[]);
+   const from=s===first[0]?first[1]:1,to=s===next[0]?next[1]-1:999;
+   const chosen=ayahs.filter(a=>Number(a.number)>=from&&Number(a.number)<=to);
+   chosen.forEach(a=>{const p=document.createElement("p");p.className="reader-ayah";p.textContent=a.text+" ﴿"+a.number+"﴾";nodes.push(p);});
+  }
+  if(!nodes.length)throw new Error("لم يتم العثور على آيات هذا الجزء");
+  box.innerHTML="";nodes.forEach(n=>box.append(n));
+ }catch(e){box.textContent="ما قدرناش نحملو المصحف الآن. تأكدي من الإنترنت وحاولي من جديد.";}
+}
 let state={parts:{},round:1,history:[],closed:false};
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==="object")state={...state,...saved};}catch(e){}
 state.parts=state.parts||{};state.history=Array.isArray(state.history)?state.history:[];
@@ -143,6 +170,7 @@ function render(){
   const title=document.createElement("strong");title.textContent="الجزء "+i;card.append(title);
   const status=document.createElement("small");status.className=p.done?"done":p.name?"busy":"free";status.textContent=p.done?"مكتمل ✓":p.name?"محجوز":"متاح";card.append(status);
   const who=document.createElement("small");who.textContent=p.name?(p.done?"قرأه: ":"حجزه: ")+p.name:"";card.append(who);
+  if(p.name){const read=document.createElement("button");read.type="button";read.textContent="اقرأ الجزء "+i;read.addEventListener("click",()=>openJuzReader(i));card.append(read);}
   if(!p.name&&!state.closed){
    const label=document.createElement("label");label.style.display="block";label.style.marginTop="8px";
    const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);check.style.width="auto";check.style.margin="0 6px";
