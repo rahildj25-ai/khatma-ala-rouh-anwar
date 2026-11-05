@@ -215,28 +215,48 @@ function updateSelection(){
  const n=document.querySelectorAll(".part-choice:checked").length;
  $("selectedCount").textContent=n?n+" جزء محدد للحجز":"لم تختاري أي جزء بعد";
 }
-const WARSH_JUZ_START_PAGES=[1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
-let activeJuz=1,currentMushafPage=1,lastMushafPage=604;
+let activeJuz=1,currentMushafPage=1,lastMushafPage=604,warshPageRanges=null;
+let warshLayoutPromise=null;
+async function getWarshPageRanges(){
+ if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("layout unavailable");return r.json();}).then(d=>{
+  if(!Array.isArray(d.juz_starts)||d.juz_starts.length!==30||!Array.isArray(d.page_starts))throw new Error("missing page/juz boundaries");
+  const pageAt=pos=>{let lo=0,hi=d.page_starts.length;while(lo<hi){const mid=(lo+hi)>>1;if(d.page_starts[mid]<=pos)lo=mid+1;else hi=mid;}return lo;};
+  const starts=d.juz_starts.map(pos=>pageAt(pos));
+  if(starts.some((v,i)=>!Number.isInteger(v)||v<1||v>604||(i&&v<=starts[i-1])))throw new Error("invalid Warsh page boundaries");
+  return starts;
+ });
+ return warshLayoutPromise;
+}
 function showWarshPage(){
  const img=$("warshPageImage");
  img.src="https://cdn.jsdelivr.net/gh/QuranHub/quran-pages-images@main/kfgqpc/warsh/"+currentMushafPage+".jpg";
  img.alt="مصحف ورش عن نافع — الصفحة "+currentMushafPage;
- $("mushafPageLabel").textContent="صفحة "+currentMushafPage+" من "+lastMushafPage;
- $("mushafPageFoot").textContent="الجزء "+activeJuz+" — الصفحات من "+WARSH_JUZ_START_PAGES[activeJuz-1]+" إلى "+lastMushafPage+" فقط";
- $("prevMushafPage").disabled=currentMushafPage<=WARSH_JUZ_START_PAGES[activeJuz-1];
+ $("mushafPageLabel").textContent="صفحة "+currentMushafPage+" من 604";
+ $("mushafPageFoot").textContent="الجزء "+activeJuz+" — صفحة "+currentMushafPage+" من صفحات الجزء المحدد";
+ $("prevMushafPage").disabled=currentMushafPage<=warshPageRanges[activeJuz-1];
  $("nextMushafPage").disabled=currentMushafPage>=lastMushafPage;
 }
-function openReader(juz){
+async function openReader(juz){
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
- currentMushafPage=WARSH_JUZ_START_PAGES[activeJuz-1];
- lastMushafPage=activeJuz===30?604:WARSH_JUZ_START_PAGES[activeJuz]-1;
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
- $("readerNotice").textContent="صفحات المصحف المصوّرة. التنقل محصور في صفحات الجزء المختار.";
+ $("readerNotice").textContent="تحميل صفحات مصحف ورش وتحديد بداية ونهاية الجزء من فهرس الصفحات.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
- showWarshPage();
+ $("mushafPageFoot").textContent="جاري تحديد صفحات الجزء...";
+ $("warshPageImage").removeAttribute("src");
+ try{
+  warshPageRanges=await getWarshPageRanges();
+  currentMushafPage=warshPageRanges[activeJuz-1];
+  lastMushafPage=activeJuz===30?604:warshPageRanges[activeJuz]-1;
+  if(lastMushafPage<currentMushafPage)throw new Error("invalid range");
+  showWarshPage();
+ }catch(e){
+  $("mushafPageLabel").textContent="—";
+  $("mushafPageFoot").textContent="تعذر تحميل فهرس حدود أجزاء ورش. لم نستخدم أرقاماً تقديرية.";
+  $("prevMushafPage").disabled=true;$("nextMushafPage").disabled=true;
+ }
 }
-$("prevMushafPage").addEventListener("click",()=>{if(currentMushafPage>WARSH_JUZ_START_PAGES[activeJuz-1]){currentMushafPage--;showWarshPage();}});
-$("nextMushafPage").addEventListener("click",()=>{if(currentMushafPage<lastMushafPage){currentMushafPage++;showWarshPage();}});
+$("prevMushafPage").addEventListener("click",()=>{if(warshPageRanges&&currentMushafPage>warshPageRanges[activeJuz-1]){currentMushafPage--;showWarshPage();}});
+$("nextMushafPage").addEventListener("click",()=>{if(warshPageRanges&&currentMushafPage<lastMushafPage){currentMushafPage++;showWarshPage();}});
 $("warshPageImage").addEventListener("error",()=>{$("mushafPageFoot").textContent="تعذر تحميل صورة الصفحة. تحققي من الإنترنت وحاولي مجدداً.";});
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
