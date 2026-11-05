@@ -1,209 +1,254 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#244638">
+<meta name="description" content="ختمة قرآنية جماعية على روح أنور، نسأل الله له الرحمة والمغفرة.">
 <title>ختمة لخويا أنور</title>
 <style>
+:root{--green:#244638;--green2:#426b54;--sage:#e9f0e8;--cream:#f7f5ef;--gold:#c5a66b;--ink:#26382f;--muted:#718078;--white:#fff;--line:#e4e9e2;--shadow:0 12px 35px #203b2b12}
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Tahoma,Arial,sans-serif;
-  background:#f6f3ed;
-  color:#34483d;
-  text-align:center;
-}
-header{
-  background:linear-gradient(135deg,#304d3e,#718c70);
-  color:white;
-  padding:38px 15px;
-}
-header h1{font-size:27px;margin:8px}
-header p{line-height:1.9}
-main{max-width:850px;margin:25px auto;padding:15px}
-.card{
-  background:white;
-  padding:22px;
-  border-radius:18px;
-  margin:18px 0;
-  box-shadow:0 3px 14px #0000000d;
-}
-h2{color:#48664e}
-input{
-  padding:12px;
-  border:1px solid #cbd5c9;
-  border-radius:9px;
-  width:100%;
-  margin:8px 0;
-  font-size:16px;
-}
-button{
-  background:#54765b;
-  color:white;
-  border:0;
-  border-radius:9px;
-  padding:11px 17px;
-  margin:5px;
-  cursor:pointer;
-  font-size:15px;
-}
-button:disabled{opacity:.5;cursor:not-allowed}
-.parts{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
-  gap:10px;
-}
-.part{
-  border:1px solid #dce5dc;
-  border-radius:12px;
-  padding:13px 5px;
-  background:#f9faf7;
-}
-.part strong{display:block;margin-bottom:7px}
-.part small{display:block;margin:5px}
-.free{color:#39804b}
-.busy{color:#a66c32}
-.done{color:#39804b}
-.note{font-size:13px;color:#777;line-height:1.8}
-footer{padding:25px;color:#71816f}
-.reader-overlay{display:none;position:fixed;inset:0;background:#f6f3ed;z-index:9999;overflow:auto;padding:14px}.reader-panel{max-width:850px;margin:0 auto;background:white;border-radius:16px;padding:18px;text-align:right}.reader-panel h2{text-align:center}.reader-ayah{font-family:"WarshMushaf",serif;font-size:22px;line-height:2.1;text-align:justify;margin:0}
-.mushaf-page{width:min(100%,390px);min-height:560px;margin:18px auto;padding:25px 20px 35px;background:#fffdf5;border:5px double #9b8657;border-radius:4px;box-shadow:0 3px 14px #0002;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always}
-.mushaf-page-body{font-family:"WarshMushaf",serif;font-size:22px;line-height:2.25;text-align:justify;color:#18291e}
-.mushaf-page-head{font-size:13px;color:#8a7446;border-bottom:1px solid #b9a477;padding-bottom:7px;margin-bottom:12px;text-align:center}
-.mushaf-page-foot{font-size:12px;color:#8a7446;border-top:1px solid #b9a477;padding-top:7px;margin-top:12px;text-align:center}
-@font-face{font-family:"WarshMushaf";src:url("https://api.quranpedia.net/assets/fonts/warsh/warsh.woff2") format("woff2");font-display:swap}.reader-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;background:#f6f3ed;padding:8px;z-index:2}.reader-toolbar button{margin:2px}.mushaf-page{width:min(100%,430px);height:min(78vh,760px);min-height:540px;margin:12px auto;background:#fff;border:1px solid #d8cba8;box-shadow:0 4px 18px #0002;padding:0;display:block}
-.mushaf-pdf{width:100%;height:100%;border:0;background:#fff}
-.mushaf-controls{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;padding:8px}
-#readerContent{padding:0!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.75}
+button,input{font:inherit}
+button{cursor:pointer}
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#1e3d30,#426b54);color:#fff;padding:42px 18px 48px;text-align:center}
+.hero:before,.hero:after{content:"";position:absolute;border:1px solid #ffffff20;border-radius:50%;width:260px;height:260px;pointer-events:none}
+.hero:before{top:-170px;right:-65px}.hero:after{bottom:-210px;left:-75px;width:330px;height:330px}
+.hero-inner{position:relative;max-width:850px;margin:auto}
+.mark{display:inline-grid;place-items:center;width:58px;height:58px;border:1px solid #ffffff55;border-radius:50%;font-size:27px;margin-bottom:10px}
+.hero h1{font-size:clamp(27px,5vw,42px);margin:4px 0 8px;letter-spacing:.2px}
+.hero .sub{color:#e3ece4;margin:0 auto;max-width:650px;font-size:15px}
+.verse{margin:22px auto 0;padding:13px 18px;max-width:650px;border-top:1px solid #ffffff38;border-bottom:1px solid #ffffff38;color:#f6e9c9;font-size:18px;line-height:2}
+main{width:min(100% - 28px,980px);margin:25px auto 50px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:22px;margin:17px 0;box-shadow:var(--shadow)}
+.section-head{display:flex;align-items:center;gap:10px;margin:0 0 12px;color:var(--green);font-size:20px}
+.section-head .ico{width:38px;height:38px;display:grid;place-items:center;background:var(--sage);border-radius:12px;font-size:18px}
+.intro p{margin:7px 0;color:#53645a}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:#f8faf7;border:1px solid var(--line);border-radius:15px;padding:14px 8px;text-align:center}
+.stat strong{display:block;color:var(--green);font-size:25px;line-height:1.4}
+.stat span{font-size:12px;color:var(--muted)}
+.progress-track{height:12px;border-radius:20px;background:#e8eee7;overflow:hidden;margin:17px 0 7px}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,#789b7c,#315b43);border-radius:20px;transition:width .3s}
+.progress-caption{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:13px}
+.form-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin:14px 0}
+input[type=text]{width:100%;min-width:0;border:1px solid #d6dfd6;border-radius:12px;padding:12px 14px;background:#fff;color:var(--ink);outline:none}
+input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418}
+.btn{border:0;border-radius:12px;padding:11px 17px;background:var(--green2);color:white;font-weight:700;transition:transform .15s,background .15s}
+.btn:hover{background:var(--green);transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.secondary{background:#edf2ec;color:var(--green);border:1px solid #dce6dc}
+.btn.secondary:hover{background:#e2ebe1}
+.btn.small{padding:8px 11px;font-size:13px;margin:3px}
+.help{font-size:13px;color:var(--muted);margin:7px 0}
+.selection-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:13px 0}
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.part{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fcfdfb;min-width:0}
+.part-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.part strong{font-size:16px;color:var(--green)}
+.status{font-size:11px;border-radius:30px;padding:3px 8px;background:#edf3ed;color:#47724f;white-space:nowrap}
+.status.busy{background:#f8f0e4;color:#976b2f}
+.status.done{background:#e7f2e9;color:#347046}
+.part .person{font-size:12px;color:var(--muted);min-height:22px;margin:7px 0}
+.part label{font-size:12px;color:#52645a;display:flex;align-items:center;gap:6px}
+.part input[type=checkbox]{accent-color:var(--green2);width:17px;height:17px}
+.part-actions{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.part-actions button{flex:1}
+.empty{text-align:center;color:var(--muted);padding:20px}
+.history-item{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:10px 0;font-size:14px}
+.history-item:last-child{border-bottom:0}
+.notice{background:#f5f7f2;border-right:3px solid var(--gold);padding:12px 14px;border-radius:10px;color:#5e6c62;font-size:13px;line-height:1.9}
+.reader-overlay{display:none;position:fixed;inset:0;background:#f5f4ee;z-index:20;overflow:auto;padding:12px}
+.reader-panel{max-width:980px;margin:auto}
+.reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 15px;margin-bottom:10px}
+.reader-head h2{margin:0;color:var(--green);font-size:18px}
+.reader-frame{width:100%;height:calc(100vh - 100px);min-height:560px;border:1px solid #dfe5dc;border-radius:14px;background:white}
+footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
+[hidden]{display:none!important}
+@media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.reader-frame{height:calc(100vh - 112px);min-height:500px}}
 </style>
 </head>
 <body>
-
-<header>
-  <div style="font-size:35px">🤍 📖 🤍</div>
+<header class="hero">
+ <div class="hero-inner">
+  <div class="mark" aria-hidden="true">۞</div>
   <h1>ختمة لخويا أنور</h1>
-  <p>بسم الله الرحمن الرحيم<br>«الذين أصابتهم مصيبة قالوا إنا لله وإنا إليه راجعون»<br>أقدم لكم هذا الموقع لختمة على روح فقيدي العزيز وأخي أنور، أشهد أني لا أفعل هذا تفاخراً ولا رياءً، إنما لوجه الله تعالى، فاللهم تقبل منا أجمعين.</p>
+  <p class="sub">ختمة قرآنية جماعية، نهدي ثوابها ونسأل الله أن يتقبلها ويرحم فقيدنا.</p>
+  <div class="verse">﴿ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾</div>
+ </div>
 </header>
-
 <main>
-  <section class="card">
-    <h2>🌿 نية الختمة</h2>
-    <p>ختمة قرآنية جماعية على روح فقيدي العزيز وأخي أنور، نسأل الله أن يتقبلها منا جميعاً.</p><p>رحمك الله يا أنور وأسكنك فسيح جناته.</p>
-  </section>
-
-  <section class="card">
-    <h2>📊 تقدم الختمة</h2>
-    <h1 id="progress">0 / 30</h1>
-    <p>الأجزاء المكتملة</p>
-    <div style="background:#e7ece5;border-radius:20px;height:13px">
-      <div id="bar" style="height:13px;width:0%;background:#64866b;border-radius:20px"></div>
-    </div>
-    <p id="summary">نسأل الله القبول 🤍</p>
-  </section>
-
-  <section class="card">
-    <h2>📖 اختار الجزء تاعك</h2>
-    <p class="note">اكتب اسمك، علّم جزءاً أو عدة أجزاء متاحة، ثم اضغط «احجز الأجزاء المحددة».</p>
-    <input id="name" maxlength="35" placeholder="اكتب اسمك هنا">
-    <button id="bookSelected" type="button">احجز الأجزاء المحددة</button>
-    <div id="parts" class="parts"></div>
-  </section>
-
-  <section class="card">
-    <h2>📖 قراءة الجزء المحجوز</h2>
-    <p>اختار «اقرأ الجزء» الموجود تحت الجزء الذي حجزته؛ سيظهر لك هذا الجزء وحده دون بقية القرآن.</p>
-  </section>
-  <section class="card">
-    <h2>🤍 دعاء للفقيد</h2>
-    <p style="line-height:2">
-    اللهم ارحم أنور رحمة واسعة، واغفر له،
-    ونوّر قبره، واجعل القرآن شفيعاً له،
-    واجمعنا به في جنات النعيم.
-    </p>
-  </section>
-
-  <section class="card"><h2>📚 سجل الختمات السابقة</h2><div id="history">لا توجد ختمات مكتملة بعد.</div></section>
-  <p class="note" id="connection" role="status" aria-live="polite"></p>
+ <section class="card intro">
+  <h2 class="section-head"><span class="ico">🤍</span> نية الختمة</h2>
+  <p>هذه ختمة قرآنية جماعية على روح أخي أنور، نسأل الله أن يتقبل من كل من شارك فيها، وأن يجعل القرآن نوراً ورحمةً له.</p>
+  <p>اللهم اغفر له وارحمه، وأسكنه فسيح جناتك.</p>
+ </section>
+ <section class="card">
+  <h2 class="section-head"><span class="ico">🌿</span> تقدم الختمة</h2>
+  <div class="stats">
+   <div class="stat"><strong id="progress">0/30</strong><span>أجزاء مكتملة</span></div>
+   <div class="stat"><strong id="reserved">0</strong><span>أجزاء محجوزة</span></div>
+   <div class="stat"><strong id="available">30</strong><span>أجزاء متاحة</span></div>
+  </div>
+  <div class="progress-track" role="progressbar" aria-label="نسبة إكمال الختمة" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0" id="progressBar"><div class="progress-fill" id="bar"></div></div>
+  <div class="progress-caption"><span id="progressText">بداية الختمة</span><span id="percent">0%</span></div>
+ </section>
+ <section class="card">
+  <h2 class="section-head"><span class="ico">📖</span> اختاري الجزء تاعك</h2>
+  <p class="help">اكتبي اسمك، اختاري جزءاً أو أكثر من الأجزاء المتاحة، ثم اضغطي على زر الحجز.</p>
+  <div class="form-row">
+   <input id="name" type="text" maxlength="35" autocomplete="name" placeholder="اسم المشاركة / المشارك" aria-label="الاسم">
+   <button class="btn" id="bookSelected" type="button">احجز الأجزاء المحددة</button>
+  </div>
+  <div class="selection-bar"><span class="help" id="selectedCount" aria-live="polite">لم تختاري أي جزء بعد</span><button class="btn secondary small" id="clearSelection" type="button">إلغاء التحديد</button></div>
+  <div id="parts" class="parts"></div>
+ </section>
+ <section class="card">
+  <h2 class="section-head"><span class="ico">📚</span> قراءة الجزء</h2>
+  <p class="help">بعد الحجز، اضغطي «اقرأ الجزء». يفتح مصحف آيات الرسمي؛ اختاري رواية ورش عن نافع ثم رقم الجزء من قائمة التصفح.</p>
+  <div class="notice">للدقة: عارض المصحف تابع لجامعة الملك سعود، ويعرض صور صفحات المصحف. اختيار رواية ورش ورقم الجزء يتم من داخل العارض الرسمي؛ موقع الختمة لا يخمّن صفحات الأجزاء ولا يغيّر نص القرآن.</div>
+ </section>
+ <section class="card">
+  <h2 class="section-head"><span class="ico">🕊️</span> دعاء للفقيد</h2>
+  <p style="line-height:2;margin:0">اللهم ارحم أنور رحمةً واسعة، واغفر له، ونوّر قبره، واجعل القرآن شفيعاً له، واجمعنا به في جنات النعيم.</p>
+ </section>
+ <section class="card">
+  <h2 class="section-head"><span class="ico">🗂️</span> سجل الختمات السابقة</h2>
+  <div id="history"><p class="empty">لا توجد ختمات مكتملة بعد.</p></div>
+ </section>
+ <p class="help" id="connection" role="status" aria-live="polite"></p>
 </main>
-
-<footer>
-  صدقة ودعاء على روح فقيدنا أنور 🤍
-</footer>
-<div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true">
- <div class="reader-toolbar">
-  <button type="button" id="closeReader">رجوع للموقع</button>
- </div>
+<footer>ختمة ودعاء على روح فقيدنا أنور 🤍</footer>
+<div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
  <div class="reader-panel">
-  <h2 id="readerTitle">مصحف ورش عن نافع</h2>
-  <p class="note" style="text-align:center;line-height:2">هذا عارض المصحف الإلكتروني بجامعة الملك سعود، ويعرض صور صفحات المصحف. من داخل العارض اختاري «رواية ورش عن نافع»، ثم اختاري رقم الجزء من قائمة «الجزء» حتى تتصفحي الجزء الصحيح. لا نعتمد على أرقام صفحات مخمّنة.</p>
-  <iframe id="officialMushaf" title="المصحف الإلكتروني - رواية ورش عن نافع" src="https://quran.ksu.edu.sa/index.php?l=ar" style="width:100%;height:78vh;min-height:650px;border:0;background:white" loading="lazy" allowfullscreen></iframe>
+  <div class="reader-head">
+   <h2 id="readerTitle">مصحف ورش عن نافع</h2>
+   <div>
+    <a class="btn secondary small" href="https://quran.ksu.edu.sa/m.php" target="_blank" rel="noopener noreferrer">فتح المصحف في صفحة مستقلة ↗</a>
+    <button class="btn small" id="closeReader" type="button">رجوع للموقع</button>
+   </div>
+  </div>
+  <iframe class="reader-frame" id="officialMushaf" title="المصحف الإلكتروني آيات من جامعة الملك سعود" src="https://quran.ksu.edu.sa/m.php" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
  </div>
-
+</div>
 <script>
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const partsBox=$("parts"), connection=$("connection"), nameInput=$("name");
-const KEY="khatma_anwar_local_v2";
-const juzStarts=[null,[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
-function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
-$("closeReader").addEventListener("click",closeReader);
-let activeJuz=1;
-function openJuzReader(juz){
- if(!Number.isInteger(juz)||juz<1||juz>30)return;
- activeJuz=juz;
- $("readerOverlay").style.display="block";
- document.body.style.overflow="hidden";
- $("readerTitle").textContent="الجزء "+juz+" — مصحف ورش عن نافع";
+const KEY="khatma_anwar_local_v3", OLD_KEY="khatma_anwar_local_v2";
+const partsBox=$("parts"), nameInput=$("name"), connection=$("connection");
+let state={parts:{},round:1,history:[]};
+function validState(s){
+ return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);
 }
-let state={parts:{},round:1,history:[],closed:false};
-try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==="object")state={...state,...saved};}catch(e){}
-state.parts=state.parts||{};state.history=Array.isArray(state.history)?state.history:[];
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));return true;}catch(e){connection.textContent="تعذر الحفظ في هذا المتصفح. جرّبي فتح الموقع في Chrome.";return false;}}
+try{
+ let raw=localStorage.getItem(KEY);
+ if(!raw)raw=localStorage.getItem(OLD_KEY);
+ const saved=raw?JSON.parse(raw):null;
+ if(validState(saved))state={parts:saved.parts,round:Number(saved.round)||1,history:saved.history};
+}catch(e){connection.textContent="تعذر قراءة البيانات المحفوظة في هذا المتصفح.";}
+function save(){
+ try{localStorage.setItem(KEY,JSON.stringify(state));return true;}
+ catch(e){connection.textContent="تعذر حفظ التغيير. تأكدي من مساحة التخزين وإعدادات المتصفح.";return false;}
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function currentCounts(){
+ let done=0,res=0;
+ for(let i=1;i<=30;i++){const p=state.parts[i];if(p&&p.done)done++;else if(p&&p.name)res++;}
+ return {done,res,free:30-done-res};
+}
 function render(){
  partsBox.innerHTML="";
- let completed=0,reserved=0;
+ const counts=currentCounts();
  for(let i=1;i<=30;i++){
-  const p=state.parts[i]||{};
-  if(p.done)completed++;else if(p.name)reserved++;
-  const card=document.createElement("div");card.className="part";
-  const title=document.createElement("strong");title.textContent="الجزء "+i;card.append(title);
-  const status=document.createElement("small");status.className=p.done?"done":p.name?"busy":"free";status.textContent=p.done?"مكتمل ✓":p.name?"محجوز":"متاح";card.append(status);
-  const who=document.createElement("small");who.textContent=p.name?(p.done?"قرأه: ":"حجزه: ")+p.name:"";card.append(who);
-  if(p.name){const read=document.createElement("button");read.type="button";read.textContent="اقرأ الجزء "+i;read.addEventListener("click",()=>openJuzReader(i));card.append(read);}
-  if(!p.name&&!state.closed){
-   const label=document.createElement("label");label.style.display="block";label.style.marginTop="8px";
-   const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);check.style.width="auto";check.style.margin="0 6px";
-   label.append(check,document.createTextNode("اختيار هذا الجزء"));card.append(label);
-  } else if(p.name&&!p.done){
-   const doneBtn=document.createElement("button");doneBtn.type="button";doneBtn.textContent="تمت القراءة ✓";
-   doneBtn.addEventListener("click",()=>{if(confirm("هل أكملت قراءة الجزء "+i+"؟")){state.parts[i].done=true;save();render();}});card.append(doneBtn);
-   const cancel=document.createElement("button");cancel.type="button";cancel.textContent="إلغاء الحجز";
-   cancel.addEventListener("click",()=>{if(confirm("إلغاء حجز الجزء "+i+"؟")){delete state.parts[i];save();render();}});card.append(cancel);
+  const p=state.parts[i]||null;
+  const card=document.createElement("article");card.className="part";
+  const top=document.createElement("div");top.className="part-top";
+  const title=document.createElement("strong");title.textContent="الجزء "+i;top.append(title);
+  const badge=document.createElement("span");badge.className="status"+(p&&p.done?" done":p?" busy":"");badge.textContent=p&&p.done?"مكتمل ✓":p?"محجوز":"متاح";top.append(badge);card.append(top);
+  const person=document.createElement("div");person.className="person";person.textContent=p?(p.done?"أتمّ القراءة: ":"حجزه: ")+p.name:"متاح للمشاركة";card.append(person);
+  if(!p){
+   const label=document.createElement("label");
+   const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);
+   label.append(check,document.createTextNode("اختيار الجزء"));card.append(label);
+  }else if(!p.done){
+   const actions=document.createElement("div");actions.className="part-actions";
+   const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="اقرأ الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
+   const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="تمت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
+   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn secondary small";cancel.textContent="إلغاء الحجز";cancel.addEventListener("click",()=>cancelPart(i));actions.append(cancel);
+   card.append(actions);
   }
   partsBox.append(card);
  }
- $("progress").textContent=completed+" / 30";
- $("bar").style.width=(completed/30*100)+"%";
- $("summary").textContent=completed===30?"اكتملت الختمة، تقبل الله من الجميع 🤍":"باقي "+(30-completed)+" جزءاً — المحجوز: "+reserved;
- const history=$("history");
- history.innerHTML="";
- if(!state.history.length)history.textContent="لا توجد ختمات مكتملة بعد.";
- else state.history.slice().reverse().forEach(item=>{const p=document.createElement("p");p.textContent="الختمة رقم "+item.round+" — اكتملت: "+item.date;history.append(p);});
- $("bookSelected").disabled=completed===30;
+ $("progress").textContent=counts.done+"/30";
+ $("reserved").textContent=counts.res;
+ $("available").textContent=counts.free;
+ $("bar").style.width=(counts.done/30*100)+"%";
+ $("progressBar").setAttribute("aria-valuenow",String(counts.done));
+ $("percent").textContent=Math.round(counts.done/30*100)+"%";
+ $("progressText").textContent=counts.done===30?"اكتملت الختمة، تقبل الله من الجميع": "الختمة رقم "+state.round+" — باقي "+(30-counts.done)+" جزء";
+ $("bookSelected").disabled=counts.free===0;
+ renderHistory();
+ updateSelection();
 }
+function renderHistory(){
+ const box=$("history");box.innerHTML="";
+ if(!state.history.length){const p=document.createElement("p");p.className="empty";p.textContent="لا توجد ختمات مكتملة بعد.";box.append(p);return;}
+ state.history.slice().reverse().forEach(item=>{
+  const row=document.createElement("div");row.className="history-item";
+  const label=document.createElement("strong");label.textContent="الختمة رقم "+item.round;
+  const date=document.createElement("span");date.textContent=item.date;
+  row.append(label,date);box.append(row);
+ });
+}
+function updateSelection(){
+ const n=document.querySelectorAll(".part-choice:checked").length;
+ $("selectedCount").textContent=n?n+" جزء محدد للحجز":"لم تختاري أي جزء بعد";
+}
+function openReader(juz){
+ $("readerTitle").textContent="قراءة الجزء "+juz+" — مصحف ورش عن نافع";
+ $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
+}
+function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
+$("closeReader").addEventListener("click",closeReader);
+$("readerOverlay").addEventListener("click",e=>{if(e.target===$("readerOverlay"))closeReader();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeReader();});
+partsBox.addEventListener("change",e=>{if(e.target.matches(".part-choice"))updateSelection();});
+$("clearSelection").addEventListener("click",()=>{document.querySelectorAll(".part-choice").forEach(x=>x.checked=false);updateSelection();});
 $("bookSelected").addEventListener("click",()=>{
  const name=nameInput.value.trim();
  if(!name){alert("اكتبي اسمك أولاً.");nameInput.focus();return;}
- const selected=[...document.querySelectorAll(".part-choice:checked")].map(x=>Number(x.value));
- if(!selected.length){alert("اختاري جزءاً واحداً على الأقل.");return;}
- selected.forEach(i=>{if(!state.parts[i])state.parts[i]={name,done:false};});
- if(save()){render();connection.textContent="تم تسجيل الأجزاء باسم "+name+" على هذا الجهاز.";}
+ const selected=[...document.querySelectorAll(".part-choice:checked")].map(x=>Number(x.value)).filter(i=>i>=1&&i<=30&&!state.parts[i]);
+ if(!selected.length){alert("اختاري جزءاً متاحاً واحداً على الأقل.");return;}
+ selected.forEach(i=>state.parts[i]={name,done:false});
+ if(save()){connection.textContent="تم تسجيل الحجز باسم "+name+" في هذا الجهاز والمتصفح.";render();}
 });
-if(!localStorage){connection.textContent="التخزين غير متاح في هذا المتصفح."; }
+function finishPart(i){
+ const p=state.parts[i];if(!p||p.done)return;
+ const name=nameInput.value.trim();
+ if(name!==p.name){alert("للتأكيد، اكتبي نفس الاسم الذي حُجز به هذا الجزء في خانة الاسم.");nameInput.focus();return;}
+ if(!confirm("تأكيد إتمام قراءة الجزء "+i+"؟"))return;
+ p.done=true;
+ const counts=currentCounts();
+ if(counts.done===30){
+  const completedRound=state.round;
+  state.history.push({round:completedRound,date:new Date().toLocaleDateString("ar-DZ")});
+  state.parts={};state.round=completedRound+1;
+  if(save()){render();connection.textContent="الحمد لله، اكتملت الختمة رقم "+completedRound+" وبدأت الختمة رقم "+state.round+". تقبل الله.";window.scrollTo({top:0,behavior:"smooth"});}
+  return;
+ }
+ if(save()){render();connection.textContent="تم تسجيل إكمال الجزء "+i+"."; }
+}
+function cancelPart(i){
+ const p=state.parts[i];if(!p||p.done)return;
+ const name=nameInput.value.trim();
+ if(name!==p.name){alert("اكتبي نفس الاسم الذي حُجز به الجزء لإلغاء الحجز.");nameInput.focus();return;}
+ if(confirm("إلغاء حجز الجزء "+i+"؟")){delete state.parts[i];if(save()){render();connection.textContent="تم إلغاء الحجز.";}}
+}
 render();
-connection.textContent="ملاحظة: هذه النسخة تحفظ الحجوزات على نفس الجهاز والمتصفح فقط، وليست متزامنة بين هواتف المشاركين.";
+connection.textContent="تنبيه: الحجوزات والتقدم محفوظان محلياً على هذا الجهاز فقط. لن تظهر التغييرات عند المشاركين الآخرين حتى نربط الموقع بقاعدة بيانات مشتركة.";
 })();
 </script>
 </body>
