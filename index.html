@@ -139,22 +139,37 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
+const SUPABASE_URL="https://quckxhqimzqdalzyzciu.supabase.co";
+const SUPABASE_KEY="sb_publishable_VX9pjIkafY_hieXwg_dguA_nCcvIxVF";
+const TOKEN_KEY="anwar_khatma_claims_v1";
 const KEY="khatma_anwar_local_v3", OLD_KEY="khatma_anwar_local_v2";
 const partsBox=$("parts"), nameInput=$("name"), connection=$("connection");
-let state={parts:{},round:1,history:[]};
-function validState(s){
- return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);
+let state={parts:{},round:1,history:[]},refreshing=false;
+let claims={};
+try{claims=JSON.parse(localStorage.getItem(TOKEN_KEY)||"{}")||{};}catch(e){claims={};}
+function saveClaims(){try{localStorage.setItem(TOKEN_KEY,JSON.stringify(claims));}catch(e){}}
+function makeToken(){
+ const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+ return Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
 }
-try{
- let raw=localStorage.getItem(KEY);
- if(!raw)raw=localStorage.getItem(OLD_KEY);
- const saved=raw?JSON.parse(raw):null;
- if(validState(saved))state={parts:saved.parts,round:Number(saved.round)||1,history:saved.history};
-}catch(e){connection.textContent="تعذر قراءة البيانات المحفوظة في هذا المتصفح.";}
-function save(){
- try{localStorage.setItem(KEY,JSON.stringify(state));return true;}
- catch(e){connection.textContent="تعذر حفظ التغيير. تأكدي من مساحة التخزين وإعدادات المتصفح.";return false;}
+async function api(path,options={}){
+ const response=await fetch(SUPABASE_URL+path,{
+  ...options,
+  headers:{
+   apikey:SUPABASE_KEY,
+   Authorization:"Bearer "+SUPABASE_KEY,
+   "Content-Type":"application/json",
+   ...(options.headers||{})
+  }
+ });
+ const body=await response.text();
+ if(!response.ok)throw new Error("HTTP "+response.status+" "+body);
+ return body?JSON.parse(body):null;
 }
+async function rpc(name,args){
+ return api("/rest/v1/rpc/"+name,{method:"POST",body:JSON.stringify(args)});
+}
+function validState(s){return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function currentCounts(){
  let done=0,res=0;
@@ -178,8 +193,10 @@ function render(){
   }else if(!p.done){
    const actions=document.createElement("div");actions.className="part-actions";
    const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="اقرأ الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
-   const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="تمت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
-   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn secondary small";cancel.textContent="إلغاء الحجز";cancel.addEventListener("click",()=>cancelPart(i));actions.append(cancel);
+   if(claims[i]){
+    const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="تمت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
+    const cancel=document.createElement("button");cancel.type="button";cancel.className="btn secondary small";cancel.textContent="إلغاء الحجز";cancel.addEventListener("click",()=>cancelPart(i));actions.append(cancel);
+   }
    card.append(actions);
   }
   partsBox.append(card);
@@ -190,27 +207,97 @@ function render(){
  $("bar").style.width=(counts.done/30*100)+"%";
  $("progressBar").setAttribute("aria-valuenow",String(counts.done));
  $("percent").textContent=Math.round(counts.done/30*100)+"%";
- $("progressText").textContent=counts.done===30?"اكتملت الختمة، تقبل الله من الجميع": "الختمة رقم "+state.round+" — باقي "+(30-counts.done)+" جزء";
+ $("progressText").textContent=counts.done===30?"اكتملت الختمة، تقبل الله من الجميع":"باقي "+(30-counts.done)+" جزء";
  $("bookSelected").disabled=counts.free===0;
  renderHistory();
  updateSelection();
 }
 function renderHistory(){
  const box=$("history");box.innerHTML="";
- if(!state.history.length){const p=document.createElement("p");p.className="empty";p.textContent="لا توجد ختمات مكتملة بعد.";box.append(p);return;}
- state.history.slice().reverse().forEach(item=>{
-  const row=document.createElement("div");row.className="history-item";
-  const label=document.createElement("strong");label.textContent="الختمة رقم "+item.round;
-  const date=document.createElement("span");date.textContent=item.date;
-  row.append(label,date);box.append(row);
- });
+ const counts=currentCounts();
+ if(counts.done===30){
+  const p=document.createElement("p");p.className="empty";p.textContent="الحمد لله، اكتملت الختمة الحالية. تقبل الله من الجميع.";box.append(p);return;
+ }
+ const p=document.createElement("p");p.className="empty";p.textContent="الختمة جارية، وسيظهر اكتمالها هنا عند إتمام الأجزاء الثلاثين.";box.append(p);
 }
 function updateSelection(){
  const n=document.querySelectorAll(".part-choice:checked").length;
  $("selectedCount").textContent=n?n+" جزء محدد للحجز":"لم تختاري أي جزء بعد";
 }
-let activeJuz=1,warshPageRanges=null;
-let warshLayoutPromise=null;
+async function refresh(showMessage=false){
+ if(refreshing)return;refreshing=true;
+ try{
+  const rows=await api("/rest/v1/juz_reservations?select=juz,participant_name,status,reserved_at,completed_at&order=juz.asc");
+  const next={};
+  rows.forEach(row=>{next[row.juz]={name:row.participant_name,done:row.status==="completed",reservedAt:row.reserved_at,completedAt:row.completed_at};});
+  state.parts=next;
+  render();
+  connection.textContent="متصل بالختمة المشتركة ✓ التحديثات تظهر لجميع المشاركين تلقائياً.";
+ }catch(e){
+  connection.textContent="تعذر الاتصال بالختمة المشتركة. تحققي من الإنترنت؛ لم يتم تسجيل أي تغيير.";
+  if(showMessage)alert("ما قدرناش نتصلو بالختمة المشتركة. تأكدي من الإنترنت وعاودي.");
+ }finally{refreshing=false;}
+}
+async function migrateOldLocalData(){
+ if(localStorage.getItem("anwar_shared_migration_v1")==="done")return;
+ let old=null;
+ try{
+  const raw=localStorage.getItem(KEY)||localStorage.getItem(OLD_KEY);
+  old=raw?JSON.parse(raw):null;
+ }catch(e){}
+ if(!validState(old)) {localStorage.setItem("anwar_shared_migration_v1","done");return;}
+ for(let i=1;i<=30;i++){
+  const p=old.parts[i];if(!p||!p.name)continue;
+  const token=makeToken();
+  try{
+   const booked=await rpc("book_juz",{p_juz:i,p_name:String(p.name).slice(0,35),p_token:token});
+   if(booked===true){claims[i]=token;saveClaims();if(p.done)await rpc("complete_juz",{p_juz:i,p_token:token});}
+  }catch(e){}
+ }
+ localStorage.setItem("anwar_shared_migration_v1","done");
+}
+$("bookSelected").addEventListener("click",async()=>{
+ const name=nameInput.value.trim();
+ if(!name){alert("اكتبي اسمك أولاً.");nameInput.focus();return;}
+ const selected=[...document.querySelectorAll(".part-choice:checked")].map(x=>Number(x.value)).filter(i=>i>=1&&i<=30&&!state.parts[i]);
+ if(!selected.length){alert("اختاري جزءاً متاحاً واحداً على الأقل.");return;}
+ const button=$("bookSelected");button.disabled=true;button.textContent="جارٍ تسجيل الحجز...";
+ let booked=0,failed=0;
+ for(const i of selected){
+  const token=makeToken();
+  try{
+   const ok=await rpc("book_juz",{p_juz:i,p_name:name,p_token:token});
+   if(ok===true){claims[i]=token;booked++;}else failed++;
+  }catch(e){failed++;}
+ }
+ saveClaims();
+ await refresh();
+ button.textContent="احجز الأجزاء المحددة";
+ if(booked)connection.textContent="تم حجز "+booked+" جزء باسم "+name+"، والتحديث وصل للختمة المشتركة.";
+ if(failed)alert("تحجز "+booked+" جزء. "+failed+" جزء ما تحجزوش لأنه ربما سبقك مشارك آخر أو انقطع الاتصال. شوفي الحالة المحدثة.");
+});
+async function finishPart(i){
+ const p=state.parts[i];if(!p||p.done)return;
+ if(!claims[i]){alert("إتمام القراءة متاح من الجهاز الذي تم منه حجز هذا الجزء.");return;}
+ if(!confirm("تأكيد إتمام قراءة الجزء "+i+" باسم "+p.name+"؟"))return;
+ try{
+  const ok=await rpc("complete_juz",{p_juz:i,p_token:claims[i]});
+  if(ok!==true){alert("ما قدرناش نثبت الإتمام. عاودي التحقق من الحجز والاتصال.");return;}
+  await refresh();
+  connection.textContent="تم تسجيل إكمال الجزء "+i+"، وظهر التحديث عند جميع المشاركين.";
+ }catch(e){alert("تعذر تسجيل الإتمام بسبب الاتصال. عاودي المحاولة.");}
+}
+async function cancelPart(i){
+ const p=state.parts[i];if(!p||p.done)return;
+ if(!claims[i]){alert("إلغاء الحجز متاح من الجهاز الذي تم منه الحجز.");return;}
+ if(!confirm("إلغاء حجز الجزء "+i+"؟"))return;
+ try{
+  const ok=await rpc("cancel_juz",{p_juz:i,p_token:claims[i]});
+  if(ok===true){delete claims[i];saveClaims();await refresh();connection.textContent="تم إلغاء الحجز وأصبح الجزء متاحاً للجميع.";}
+  else alert("تعذر إلغاء الحجز؛ ربما تم إتمامه بالفعل.");
+ }catch(e){alert("تعذر إلغاء الحجز بسبب الاتصال.");}
+}
+let activeJuz=1,warshPageRanges=null,warshLayoutPromise=null;
 async function getWarshPageRanges(){
  if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("layout unavailable");return r.json();}).then(d=>{
   if(!Array.isArray(d.juz_starts)||d.juz_starts.length!==30||!Array.isArray(d.page_starts))throw new Error("missing page/juz boundaries");
@@ -230,27 +317,17 @@ async function openReader(juz){
  $("mushafPageFoot").textContent="جاري تحديد صفحات الجزء...";
  try{
   warshPageRanges=await getWarshPageRanges();
-  const first=warshPageRanges[activeJuz-1];
-  const last=activeJuz===30?604:warshPageRanges[activeJuz]-1;
+  const first=warshPageRanges[activeJuz-1],last=activeJuz===30?604:warshPageRanges[activeJuz]-1;
   if(last<first)throw new Error("invalid range");
   const fragment=document.createDocumentFragment();
   for(let page=first;page<=last;page++){
    const figure=document.createElement("figure");figure.className="warsh-page";
-   const img=document.createElement("img");
-   img.alt="مصحف ورش عن نافع — الجزء "+activeJuz+" — الصفحة "+page;
-   img.loading=page===first?"eager":"lazy";
-   img.decoding="async";
-   img.src="warsh/"+page+".png";
+   const img=document.createElement("img");img.alt="مصحف ورش عن نافع — الجزء "+activeJuz+" — الصفحة "+page;img.loading=page===first?"eager":"lazy";img.decoding="async";img.src="warsh/"+page+".png";
    img.addEventListener("error",()=>{const msg=document.createElement("figcaption");msg.textContent="تعذر تحميل صورة الصفحة "+page+"؛ تحققي من الاتصال بالإنترنت.";figure.append(msg);});
-   figure.append(img);
-   const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);
-   fragment.append(figure);
+   figure.append(img);const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);fragment.append(figure);
   }
-  reader.append(fragment);
-  $("mushafPageFoot").textContent="الجزء "+activeJuz+" فقط — من الصفحة "+first+" إلى الصفحة "+last+".";
- }catch(e){
-  $("mushafPageFoot").textContent="تعذر تحميل فهرس حدود أجزاء ورش. لم نعرض صفحات من أجزاء أخرى.";
- }
+  reader.append(fragment);$("mushafPageFoot").textContent="الجزء "+activeJuz+" فقط — من الصفحة "+first+" إلى الصفحة "+last+".";
+ }catch(e){$("mushafPageFoot").textContent="تعذر تحميل فهرس حدود أجزاء ورش. لم نعرض صفحات من أجزاء أخرى.";}
 }
 function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
@@ -258,36 +335,6 @@ $("readerOverlay").addEventListener("click",e=>{if(e.target===$("readerOverlay")
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeReader();});
 partsBox.addEventListener("change",e=>{if(e.target.matches(".part-choice"))updateSelection();});
 $("clearSelection").addEventListener("click",()=>{document.querySelectorAll(".part-choice").forEach(x=>x.checked=false);updateSelection();});
-$("bookSelected").addEventListener("click",()=>{
- const name=nameInput.value.trim();
- if(!name){alert("اكتبي اسمك أولاً.");nameInput.focus();return;}
- const selected=[...document.querySelectorAll(".part-choice:checked")].map(x=>Number(x.value)).filter(i=>i>=1&&i<=30&&!state.parts[i]);
- if(!selected.length){alert("اختاري جزءاً متاحاً واحداً على الأقل.");return;}
- selected.forEach(i=>state.parts[i]={name,done:false});
- if(save()){connection.textContent="تم تسجيل الحجز باسم "+name+" في هذا الجهاز والمتصفح.";render();}
-});
-function finishPart(i){
- const p=state.parts[i];if(!p||p.done)return;
- if(!confirm("تأكيد إتمام قراءة الجزء "+i+" باسم "+p.name+"؟"))return;
- p.done=true;
- const counts=currentCounts();
- if(counts.done===30){
-  const completedRound=state.round;
-  state.history.push({round:completedRound,date:new Date().toLocaleDateString("ar-DZ")});
-  state.parts={};state.round=completedRound+1;
-  if(save()){render();connection.textContent="الحمد لله، اكتملت الختمة رقم "+completedRound+" وبدأت الختمة رقم "+state.round+". تقبل الله.";window.scrollTo({top:0,behavior:"smooth"});}
-  return;
- }
- if(save()){render();connection.textContent="تم تسجيل إكمال الجزء "+i+"."; }
-}
-function cancelPart(i){
- const p=state.parts[i];if(!p||p.done)return;
- const name=nameInput.value.trim();
- if(name!==p.name){alert("اكتبي نفس الاسم الذي حُجز به الجزء لإلغاء الحجز.");nameInput.focus();return;}
- if(confirm("إلغاء حجز الجزء "+i+"؟")){delete state.parts[i];if(save()){render();connection.textContent="تم إلغاء الحجز.";}}
-}
-
-// تسجيل الموقع كتطبيق ويب قابل للعمل دون إنترنت
 if("serviceWorker" in navigator){
  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").then(()=>{
   $("offlineStatus").textContent="الموقع جاهز للحفظ دون إنترنت بعد تحميل صفحات المصحف.";
@@ -296,27 +343,25 @@ if("serviceWorker" in navigator){
 $("downloadMushaf").addEventListener("click",async()=>{
  const button=$("downloadMushaf"),status=$("offlineStatus");
  if(!("caches" in window)){status.textContent="هذا المتصفح لا يدعم حفظ الصفحات دون إنترنت.";return;}
- button.disabled=true;
- let saved=0;
+ button.disabled=true;let saved=0;
  try{
   const cache=await caches.open("anwar-warsh-pages-v1");
   for(let page=1;page<=604;page++){
    const url=new URL("warsh/"+page+".png",location.href).href;
    if(await cache.match(url)){saved++;status.textContent="الصفحات المحفوظة: "+saved+"/604";continue;}
-   const response=await fetch(url);
-   if(!response.ok)throw new Error("page "+page);
-   await cache.put(url,response.clone());
-   saved++;status.textContent="جارٍ تحميل صفحات المصحف: "+saved+"/604";
+   const response=await fetch(url);if(!response.ok)throw new Error("page "+page);
+   await cache.put(url,response.clone());saved++;status.textContent="جارٍ تحميل صفحات المصحف: "+saved+"/604";
   }
-  status.textContent="اكتمل التحميل! صفحات القرآن الـ604 محفوظة ويمكن قراءتها دون إنترنت.";
-  button.textContent="تم تحميل صفحات القرآن ✓";
- }catch(e){
-  status.textContent="توقف التحميل عند الصفحة "+(saved+1)+". تأكدي من الإنترنت واضغطي الزر لإكمال التحميل.";
- }finally{button.disabled=false;}
+  status.textContent="اكتمل التحميل! صفحات القرآن الـ604 محفوظة ويمكن قراءتها دون إنترنت.";button.textContent="تم تحميل صفحات القرآن ✓";
+ }catch(e){status.textContent="توقف التحميل عند الصفحة "+(saved+1)+". تأكدي من الإنترنت واضغطي الزر لإكمال التحميل.";}
+ finally{button.disabled=false;}
 });
-
-render();
-connection.textContent="تنبيه: الحجوزات والتقدم محفوظان محلياً على هذا الجهاز فقط. لن تظهر التغييرات عند المشاركين الآخرين حتى نربط الموقع بقاعدة بيانات مشتركة.";
+(async()=>{
+ connection.textContent="جارٍ الاتصال بالختمة المشتركة...";
+ await migrateOldLocalData();
+ await refresh(true);
+ setInterval(()=>refresh(false),5000);
+})();
 })();
 </script>
 </body>
