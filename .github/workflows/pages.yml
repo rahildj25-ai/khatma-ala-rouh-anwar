@@ -27,6 +27,15 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Download all Warsh Mushaf page images
+        run: |
+          mkdir -p warsh
+          for page in $(seq 1 604); do
+            curl --fail --silent --show-error --location --retry 3 \
+              "https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/warsh/${page}.png" \
+              --output "warsh/${page}.png"
+          done
+          test "$(find warsh -maxdepth 1 -name '*.png' | wc -l)" -eq 604
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
