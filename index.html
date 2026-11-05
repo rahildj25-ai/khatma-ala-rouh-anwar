@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ختمة على روح فقيدنا أنور</title>
+<title>ختمة لخويا أنور</title>
 <style>
 *{box-sizing:border-box}
 body{
@@ -73,7 +73,7 @@ footer{padding:25px;color:#71816f}
 
 <header>
   <div style="font-size:35px">🤍 📖 🤍</div>
-  <h1>ختمة على روح فقيدنا أنور</h1>
+  <h1>ختمة لخويا أنور</h1>
   <p>اللهم اجعل القرآن نوراً له في قبره<br>
   وارزقه الفردوس الأعلى من الجنة</p>
 </header>
@@ -104,6 +104,11 @@ footer{padding:25px;color:#71816f}
   </section>
 
   <section class="card">
+    <h2>📖 اقرأ القرآن برواية ورش عن نافع</h2>
+    <p>افتح المصحف الإلكتروني برواية ورش واختر الجزء الذي حجزته.</p>
+    <a href="https://quranpedia.net/mushaf/4" target="_blank" rel="noopener" style="display:inline-block;background:#54765b;color:white;padding:12px 20px;border-radius:9px;text-decoration:none">افتح مصحف ورش واقرأ الآن</a>
+  </section>
+  <section class="card">
     <h2>🤍 دعاء للفقيد</h2>
     <p style="line-height:2">
     اللهم ارحم أنور رحمة واسعة، واغفر له،
@@ -126,123 +131,34 @@ footer{padding:25px;color:#71816f}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
-// نضيف إعدادات Firebase في هذه الخانة لاحقاً
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "YOUR_DATABASE_URL",
-  projectId: "YOUR_PROJECT_ID",
-  appId: "YOUR_APP_ID"
-};
-
-const partsBox = document.getElementById("parts");
-const connection = document.getElementById("connection");
-let db = null;
-let parts = {};
-
+const partsBox=document.getElementById("parts");
+const connection=document.getElementById("connection");
+const KEY="khatma_anwar_local_v1";
+let state;
+try{state=JSON.parse(localStorage.getItem(KEY))||{parts:{},round:1,history:[]};}catch(e){state={parts:{},round:1,history:[]};}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
 function render(){
-  partsBox.innerHTML = "";
-  let completed = 0;
-
-  for(let i=1;i<=30;i++){
-    const p = parts[i] || {};
-    if(p.done) completed++;
-
-    const div = document.createElement("div");
-    div.className = "part";
-
-    const title = document.createElement("strong");
-    title.textContent = "الجزء " + i;
-
-    const status = document.createElement("small");
-    status.textContent = p.done ? "مكتمل ✓" :
-      p.name ? "محجوز" : "متاح";
-    status.className = p.done ? "done" : p.name ? "busy" : "free";
-
-    const person = document.createElement("small");
-    person.textContent = p.name ? "القارئ: " + p.name : "لم يُحجز بعد";
-
-    const btn = document.createElement("button");
-    btn.textContent = p.done ? "مكتمل" : p.name ? "محجوز" : "اختيار";
-    btn.disabled = !!p.name;
-
-    btn.onclick = async () => {
-      const name = document.getElementById("name").value.trim();
-      if(!name){
-        alert("اكتب اسمك أولاً");
-        return;
-      }
-      try{
-        const ref = db.ref("khatma/parts/" + i);
-        await ref.transaction(current => {
-          if(current === null || !current.name){
-            return {name:name,done:false};
-          }
-          return;
-        });
-      }catch(e){
-        alert("تعذر الحجز، حاول مرة أخرى");
-      }
-    };
-
-    const doneBtn = document.createElement("button");
-    doneBtn.textContent = "تمت القراءة ✓";
-    doneBtn.disabled = !p.name || p.done;
-    doneBtn.onclick = async () => {
-      if(confirm("هل أكملت قراءة هذا الجزء؟")){
-        await db.ref("khatma/parts/" + i).update({done:true});
-      }
-    };
-
-    div.append(title,status,person,btn,doneBtn);
-    partsBox.appendChild(div);
-  }
-
-  document.getElementById("progress").textContent =
-    completed + " / 30";
-
-  document.getElementById("bar").style.width =
-    (completed/30*100) + "%";
-
-  document.getElementById("summary").textContent =
-    completed === 30 ? "اكتملت الختمة، تقبل الله من الجميع 🤍" :
-    "باقي " + (30-completed) + " جزءاً";
+ partsBox.innerHTML="";let done=0,reserved=0;
+ for(let i=1;i<=30;i++){
+  const p=state.parts[i]||{};if(p.done)done++;else if(p.name)reserved++;
+  const d=document.createElement("div");d.className="part";
+  const t=document.createElement("strong");t.textContent="الجزء "+i;
+  const s=document.createElement("small");s.textContent=p.done?"مكتمل ✓":p.name?"محجوز":"متاح";s.className=p.done?"done":p.name?"busy":"free";
+  const n=document.createElement("small");n.textContent=p.name?(p.done?"قرأه: ":"القارئ: ")+p.name:"لم يُحجز بعد";
+  d.append(t,s,n);
+  if(!p.name){const x=document.createElement("button");x.textContent="احجز هذا الجزء";x.onclick=()=>{const name=document.getElementById("name").value.trim();if(!name){alert("اكتب اسمك أولاً");return;}state.parts[i]={name,done:false};save();render();};d.append(x);}
+  else if(!p.done){const x=document.createElement("button");x.textContent="تمت القراءة ✓";x.onclick=()=>{if(confirm("هل أكملت قراءة الجزء "+i+"؟")){state.parts[i].done=true;save();render();}};d.append(x);
+   const c=document.createElement("button");c.textContent="إلغاء الحجز";c.onclick=()=>{if(confirm("إلغاء الحجز؟")){delete state.parts[i];save();render();}};d.append(c);}
+  partsBox.append(d);
+ }
+ document.getElementById("progress").textContent=done+" / 30";
+ document.getElementById("bar").style.width=(done/30*100)+"%";
+ document.getElementById("summary").textContent=done===30?"اكتملت الختمة، تقبل الله من الجميع 🤍":"باقي "+(30-done)+" جزءاً — المحجوز: "+reserved;
+ if(done===30&&!state.closed){state.history.push({round:state.round,date:new Date().toLocaleString("ar-DZ")});state.closed=true;save();}
+ let old=document.getElementById("newRound");if(done===30&&!old){const x=document.createElement("button");x.id="newRound";x.textContent="ابدأ ختمة جديدة";x.onclick=()=>{state.round++;state.parts={};state.closed=false;save();render();};document.getElementById("summary").after(x);}else if(done!==30&&old)old.remove();
 }
-
-function start(){
-  if(firebaseConfig.apiKey === "YOUR_API_KEY"){
-    connection.textContent =
-      "الموقع يحتاج ربط قاعدة البيانات حتى تعمل المشاركة بين الجميع.";
-    return;
-  }
-
-  try{
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
-
-    firebase.auth().signInAnonymously().then(() => {
-      connection.textContent = "متصل بقاعدة البيانات 🤍";
-
-      for(let i=1;i<=30;i++){
-        db.ref("khatma/parts/"+i).transaction(
-          current => current === null ? {name:"",done:false} : current
-        );
-      }
-
-      db.ref("khatma/parts").on("value",snapshot=>{
-        parts = snapshot.val() || {};
-        render();
-      });
-    }).catch(()=>{
-      connection.textContent = "تعذر الاتصال. تحقق من إعدادات Firebase.";
-    });
-  }catch(e){
-    connection.textContent = "تحقق من إعدادات الاتصال.";
-  }
-}
-
+connection.textContent="الحجز يعمل على هذا الجهاز فقط مؤقتاً؛ لم تتم مزامنته بين المشاركين بعد.";
 render();
-start();
 </script>
 </body>
 </html>
