@@ -250,7 +250,7 @@ function render(){
    const label=document.createElement("label");
    const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);
    label.append(check,document.createTextNode("اختيار الجزء"));card.append(label);
-  }else if(!p.done&&claims[i]){
+  }else if(!p.done){
    const actions=document.createElement("div");actions.className="part-actions";
    const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="اقرأ الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
    const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="تمت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
