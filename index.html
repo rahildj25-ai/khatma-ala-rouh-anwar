@@ -213,18 +213,31 @@ function makeToken(){
  return Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
 }
 async function api(path,options={}){
- const response=await fetch(SUPABASE_URL+path,{
-  ...options,
-  headers:{
-   apikey:SUPABASE_KEY,
-   Authorization:"Bearer "+SUPABASE_KEY,
-   "Content-Type":"application/json",
-   ...(options.headers||{})
+ let lastError;
+ for(let attempt=0;attempt<4;attempt++){
+  try{
+   const response=await fetch(SUPABASE_URL+path,{
+    ...options,
+    headers:{
+     apikey:SUPABASE_KEY,
+     Authorization:"Bearer "+SUPABASE_KEY,
+     "Content-Type":"application/json",
+     ...(options.headers||{})
+    }
+   });
+   const body=await response.text();
+   if(!response.ok){
+    const error=new Error("HTTP "+response.status+" "+body);
+    if(![502,503,504].includes(response.status)||attempt===3)throw error;
+    lastError=error;
+   }else return body?JSON.parse(body):null;
+  }catch(error){
+   lastError=error;
+   if(attempt===3||/^Error: HTTP (?!502|503|504)/.test(String(error)))throw error;
   }
- });
- const body=await response.text();
- if(!response.ok)throw new Error("HTTP "+response.status+" "+body);
- return body?JSON.parse(body):null;
+  await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+ }
+ throw lastError||new Error("تعذر الاتصال بالختمة");
 }
 async function rpc(name,args){
  return api("/rest/v1/rpc/"+name,{method:"POST",body:JSON.stringify(args)});
@@ -530,6 +543,8 @@ $("downloadMushaf").addEventListener("click",async()=>{
  finally{button.disabled=false;}
 });
 (async()=>{
+ // Draw all 30 selectable juz immediately; server data will fill reservation names/statuses next.
+ render();
  connection.textContent="جارٍ الاتصال بالختمة المشتركة...";
  await migrateOldLocalData();
  await refresh(true);
