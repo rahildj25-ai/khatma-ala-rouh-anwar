@@ -363,7 +363,10 @@ async function flushReservationQueue(){
    else if(q.action==="complete")result=await rpc("complete_juz",{p_juz:q.juz,p_token:q.token});
    else if(q.action==="cancel")result=await rpc("cancel_juz",{p_juz:q.juz,p_token:q.token});
    if(result===true){if(q.action==="book")claims[q.juz]=q.token;if(q.action==="cancel")delete claims[q.juz];saveClaims();reservationQueue.shift();saveReservationQueue();}
-   else{reservationQueue.shift();saveReservationQueue();if(q.action==="book"){delete claims[q.juz];saveClaims();connection.textContent="لم يتأكد حجز الجزء "+q.juz+"؛ ربما حجزه مشارك آخر. حدّثي القائمة.";} }
+   else{
+    if(q.action==="book"){reservationQueue.shift();delete claims[q.juz];saveClaims();saveReservationQueue();connection.textContent="لم يتأكد حجز الجزء "+q.juz+"؛ ربما حجزه مشارك آخر. حدّثي القائمة.";}
+    else{connection.textContent="لم يتأكد "+(q.action==="cancel"?"إلغاء":"إتمام")+" الجزء "+q.juz+" من الخادم. أبقينا الطلب محفوظاً ولم نحذفه؛ راجعي حالة الجزء أو تواصلي مع صاحبة الموقع.";break;}
+   }
   }catch(e){break;}
  }
  await refresh();
@@ -506,7 +509,8 @@ partsBox.addEventListener("change",e=>{if(e.target.matches(".part-choice"))updat
 $("clearSelection").addEventListener("click",()=>{document.querySelectorAll(".part-choice").forEach(x=>x.checked=false);updateSelection();});
 if("serviceWorker" in navigator){
  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").then(()=>{
-  $("offlineStatus").textContent="الموقع جاهز للحفظ دون إنترنت بعد تحميل صفحات المصحف.";
+  $("offlineStatus").textContent="تم تفعيل حفظ الموقع. حمّلي صفحات المصحف مرة واحدة والإنترنت متصل.";
+  if(navigator.onLine)autoCacheWarshPages();
  }).catch(()=>{$("offlineStatus").textContent="تعذر تفعيل وضع دون إنترنت في هذا المتصفح."; }));
 }
 $("downloadMushaf").addEventListener("click",async()=>{
@@ -530,8 +534,17 @@ $("downloadMushaf").addEventListener("click",async()=>{
  await migrateOldLocalData();
  await refresh(true);
  await refreshDhikr();
- setInterval(()=>refresh(false),5000);
- setInterval(()=>refreshDhikr(),5000);
+ setInterval(()=>{if(navigator.onLine){flushReservationQueue();refresh(false);}},15000);
+ setInterval(()=>{if(navigator.onLine){flushDhikrQueue();refreshDhikr();}},15000);
+ if(navigator.onLine){autoCacheWarshPages();flushReservationQueue();flushDhikrQueue();}
+ window.addEventListener("online",()=>{
+  connection.textContent="رجع الإنترنت؛ جارٍ إرسال الحجوزات والأذكار المحفوظة...";
+  flushReservationQueue();flushDhikrQueue();refresh(false);autoCacheWarshPages();
+ });
+ window.addEventListener("offline",()=>{
+  connection.textContent="أنتِ الآن دون إنترنت. يمكنك قراءة الصفحات المحفوظة وحفظ طلباتك على هذا الجهاز حتى يعود الاتصال.";
+  refresh(false);refreshDhikr();
+ });
 })();
 })();
 </script>
