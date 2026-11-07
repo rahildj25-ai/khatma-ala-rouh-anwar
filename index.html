@@ -377,6 +377,14 @@ async function loadAdminReservations(){
   rows.forEach(row=>{
    const item=document.createElement("div");item.className="history-item";
    const info=document.createElement("span");info.textContent="الجزء "+row.juz+" — "+row.participant_name;
+   const actions=document.createElement("div");actions.className="part-actions";
+   const doneBtn=document.createElement("button");doneBtn.type="button";doneBtn.className="btn small";doneBtn.textContent="تأكيد الإتمام";
+   doneBtn.addEventListener("click",async()=>{
+    if(!confirm("تأكيد تسجيل إتمام الجزء "+row.juz+" باسم "+row.participant_name+"؟ استعملي هذا الخيار فقط إذا أكد لك المشارك أنه أتم القراءة."))return;
+    doneBtn.disabled=true;
+    try{const ok=await adminRpc("admin_complete_reserved_juz",{p_juz:row.juz});status.textContent=ok?"تم تسجيل إتمام الجزء "+row.juz+".":"الجزء لم يعد محجوزاً أو أُكمل مسبقاً.";await refresh();await loadAdminReservations();}
+    catch(e){doneBtn.disabled=false;status.textContent="تعذر تسجيل الإتمام: "+e.message;}
+   });
    const btn=document.createElement("button");btn.type="button";btn.className="btn secondary small";btn.textContent="إلغاء الحجز";
    btn.addEventListener("click",async()=>{
     if(!confirm("تأكيد إلغاء حجز الجزء "+row.juz+" باسم "+row.participant_name+"؟ لن يتأثر أي جزء مكتمل."))return;
@@ -384,7 +392,7 @@ async function loadAdminReservations(){
     try{const ok=await adminRpc("admin_cancel_reserved_juz",{p_juz:row.juz});status.textContent=ok?"تم إلغاء حجز الجزء "+row.juz+".":"الحجز لم يعد موجوداً أو أصبح مكتملاً.";await refresh();await loadAdminReservations();}
     catch(e){btn.disabled=false;status.textContent="تعذر الإلغاء: "+e.message;}
    });
-   item.append(info,btn);box.append(item);
+   actions.append(doneBtn,btn);item.append(info,actions);box.append(item);
   });
   status.textContent="عدد الحجوزات غير المكتملة: "+rows.length;
  }catch(e){status.textContent="تعذر تحميل الحجوزات: "+e.message+" — تحققي من صلاحية الحساب والاتصال ثم اضغطي تحديث القائمة.";box.innerHTML='<p class="empty">لم نتمكن من جلب الحجوزات. اضغطي «تحديث القائمة» بعد التأكد من تسجيل الدخول.</p>';}
@@ -626,6 +634,25 @@ async function cancelPart(i){
 }
 async function flushReservationQueue(){
  if(!navigator.onLine)return;
+ // Clear old completion retries only when that juz is already in a fully archived khatma
+ // and there is no active reservation (or pending new booking) for it.
+ try{
+  const [currentRows,historyRows]=await Promise.all([
+   api("/rest/v1/juz_reservations?select=juz"),
+   api("/rest/v1/khatma_history?select=participants,completed_parts&order=khatma_number.desc&limit=1")
+  ]);
+  const currentJuz=new Set(currentRows.map(row=>Number(row.juz)));
+  const latest=historyRows[0];
+  const archivedJuz=new Set(latest&&Number(latest.completed_parts)===30&&Array.isArray(latest.participants)&&latest.participants.length===30?latest.participants.map(person=>Number(person.juz)) : []);
+  let cleaned=false;
+  for(let i=reservationQueue.length-1;i>=0;i--){
+   const op=reservationQueue[i];
+   if(op.action==="complete"&&archivedJuz.has(Number(op.juz))&&!currentJuz.has(Number(op.juz))&&!reservationQueue.some(other=>other.action==="book"&&Number(other.juz)===Number(op.juz))){
+    reservationQueue.splice(i,1);delete claims[op.juz];cleaned=true;
+   }
+  }
+  if(cleaned){saveClaims();saveReservationQueue();}
+ }catch(e){}
  while(reservationQueue.length){
   const q=reservationQueue[0];let result=false;
   try{
