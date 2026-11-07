@@ -106,6 +106,18 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <p>هذه ختمة قرآنية جماعية على روح أخي أنور، نسأل الله أن يتقبل من كل من شارك فيها، وأن يجعل القرآن نوراً ورحمةً له.</p>
   <p>اللهم اغفر له وارحمه، وأسكنه فسيح جناتك.</p>
  </section>
+ <section class="card" id="adminSection">
+  <h2 class="section-head"><span class="ico">🔐</span> إدارة الختمة</h2>
+  <p class="help">دخول خاص بصاحبة الموقع لإلغاء الحجوزات غير المكتملة فقط.</p>
+  <div id="adminLogin">
+   <div class="form-row"><input id="adminEmail" type="email" autocomplete="username" placeholder="البريد الإلكتروني" aria-label="البريد الإلكتروني"><input id="adminPassword" type="password" autocomplete="current-password" placeholder="كلمة مرور حساب الإدارة" aria-label="كلمة مرور حساب الإدارة"></div>
+   <button class="btn" id="adminLoginBtn" type="button">دخول الإدارة</button>
+  </div>
+  <div id="adminPanel" hidden>
+   <div class="selection-bar"><span class="help" id="adminStatus">الحجوزات الحالية</span><div><button class="btn secondary small" id="adminRefresh" type="button">تحديث القائمة</button><button class="btn secondary small" id="adminLogout" type="button">خروج</button></div></div>
+   <div id="adminReservations"><p class="empty">لا توجد حجوزات غير مكتملة.</p></div>
+  </div>
+ </section>
  <section class="card">
   <h2 class="section-head"><span class="ico">🌿</span> تقدم الختمة</h2>
   <div class="stats">
@@ -254,6 +266,62 @@ async function api(path,options={}){
 async function rpc(name,args){
  return api("/rest/v1/rpc/"+name,{method:"POST",body:JSON.stringify(args)});
 }
+
+let adminAccessToken=null;
+async function adminRpc(name,args){
+ if(!adminAccessToken)throw new Error("سجلي الدخول أولاً");
+ return api("/rest/v1/rpc/"+name,{method:"POST",headers:{Authorization:"Bearer "+adminAccessToken},body:JSON.stringify(args||{})});
+}
+function showAdminLoggedOut(){
+ adminAccessToken=null;$("adminLogin").hidden=false;$("adminPanel").hidden=true;
+ $("adminPassword").value="";
+}
+async function loadAdminReservations(){
+ const box=$("adminReservations"),status=$("adminStatus");
+ status.textContent="جارٍ تحميل الحجوزات...";
+ try{
+  const rows=await adminRpc("admin_list_reserved_juz",{});
+  box.innerHTML="";
+  if(!rows.length){box.innerHTML='<p class="empty">ما كاين حتى جزء محجوز وغير مكتمل حالياً.</p>';}
+  rows.forEach(row=>{
+   const item=document.createElement("div");item.className="history-item";
+   const info=document.createElement("span");info.textContent="الجزء "+row.juz+" — "+row.participant_name;
+   const btn=document.createElement("button");btn.type="button";btn.className="btn secondary small";btn.textContent="إلغاء الحجز";
+   btn.addEventListener("click",async()=>{
+    if(!confirm("تأكيد إلغاء حجز الجزء "+row.juz+" باسم "+row.participant_name+"؟ لن يتأثر أي جزء مكتمل."))return;
+    btn.disabled=true;
+    try{
+     const ok=await adminRpc("admin_cancel_reserved_juz",{p_juz:row.juz});
+     if(ok===true){status.textContent="تم إلغاء حجز الجزء "+row.juz+".";await refresh();await loadAdminReservations();}
+     else{status.textContent="الحجز لم يعد موجوداً أو أصبح مكتملاً.";await refresh();await loadAdminReservations();}
+    }catch(e){btn.disabled=false;status.textContent="تعذر الإلغاء: "+e.message;}
+   });
+   item.append(info,btn);box.append(item);
+  });
+  status.textContent="عدد الحجوزات غير المكتملة: "+rows.length;
+ }catch(e){status.textContent="تعذر تحميل القائمة: "+e.message;}
+}
+$("adminLoginBtn").addEventListener("click",async()=>{
+ const email=$("adminEmail").value.trim(),password=$("adminPassword").value;
+ if(!email||!password){alert("اكتبي البريد الإلكتروني وكلمة المرور.");return;}
+ const btn=$("adminLoginBtn");btn.disabled=true;btn.textContent="جارٍ التحقق...";
+ try{
+  const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
+   method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
+   body:JSON.stringify({email,password})
+  });
+  const data=await response.json();
+  if(!response.ok||!data.access_token)throw new Error(data.msg||data.message||"بيانات الدخول غير صحيحة.");
+  adminAccessToken=data.access_token;
+  $("adminLogin").hidden=true;$("adminPanel").hidden=false;
+  await loadAdminReservations();
+  if($("adminStatus").textContent.startsWith("تعذر")){showAdminLoggedOut();throw new Error("هذا الحساب غير مخوّل للإدارة أو تعذر التحقق منه.");}
+ }catch(e){showAdminLoggedOut();alert("تعذر دخول الإدارة: "+e.message);}
+ finally{btn.disabled=false;btn.textContent="دخول الإدارة";}
+});
+$("adminRefresh").addEventListener("click",loadAdminReservations);
+$("adminLogout").addEventListener("click",showAdminLoggedOut);
+
 function validState(s){return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function currentCounts(){
