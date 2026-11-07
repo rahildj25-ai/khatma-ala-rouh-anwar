@@ -106,12 +106,12 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <p>هذه ختمة قرآنية جماعية على روح أخي أنور، نسأل الله أن يتقبل من كل من شارك فيها، وأن يجعل القرآن نوراً ورحمةً له.</p>
   <p>اللهم اغفر له وارحمه، وأسكنه فسيح جناتك.</p>
  </section>
- <section class="card" id="adminSection">
+ <section class="card" id="adminSection" hidden>
   <h2 class="section-head"><span class="ico">🔐</span> إدارة الختمة</h2>
   <p class="help">دخول خاص بصاحبة الموقع لإلغاء الحجوزات غير المكتملة فقط.</p>
   <div id="adminLogin">
-   <div class="form-row"><input id="adminEmail" type="email" autocomplete="username" placeholder="البريد الإلكتروني" aria-label="البريد الإلكتروني"><input id="adminPassword" type="password" autocomplete="current-password" placeholder="كلمة مرور حساب الإدارة" aria-label="كلمة مرور حساب الإدارة"></div>
-   <button class="btn" id="adminLoginBtn" type="button">دخول الإدارة</button>
+   <p class="help">الدخول متاح لحساب الإدارة المعتمد فقط.</p>
+   <button class="btn" id="adminLoginBtn" type="button">الدخول بحساب Google</button>
   </div>
   <div id="adminPanel" hidden>
    <div class="selection-bar"><span class="help" id="adminStatus">الحجوزات الحالية</span><div><button class="btn secondary small" id="adminRefresh" type="button">تحديث القائمة</button><button class="btn secondary small" id="adminLogout" type="button">خروج</button></div></div>
@@ -268,13 +268,15 @@ async function rpc(name,args){
 }
 
 let adminAccessToken=null;
+const ADMIN_EMAIL="rahil.dj25@gmail.com";
+const ADMIN_TOKEN_KEY="anwar_admin_access_token";
 async function adminRpc(name,args){
  if(!adminAccessToken)throw new Error("سجلي الدخول أولاً");
  return api("/rest/v1/rpc/"+name,{method:"POST",headers:{Authorization:"Bearer "+adminAccessToken},body:JSON.stringify(args||{})});
 }
 function showAdminLoggedOut(){
- adminAccessToken=null;$("adminLogin").hidden=false;$("adminPanel").hidden=true;
- $("adminPassword").value="";
+ adminAccessToken=null;localStorage.removeItem(ADMIN_TOKEN_KEY);
+ $("adminSection").hidden=true;$("adminLogin").hidden=false;$("adminPanel").hidden=true;
 }
 async function loadAdminReservations(){
  const box=$("adminReservations"),status=$("adminStatus");
@@ -282,7 +284,7 @@ async function loadAdminReservations(){
  try{
   const rows=await adminRpc("admin_list_reserved_juz",{});
   box.innerHTML="";
-  if(!rows.length){box.innerHTML='<p class="empty">ما كاين حتى جزء محجوز وغير مكتمل حالياً.</p>';}
+  if(!rows.length)box.innerHTML='<p class="empty">ما كاين حتى جزء محجوز وغير مكتمل حالياً.</p>';
   rows.forEach(row=>{
    const item=document.createElement("div");item.className="history-item";
    const info=document.createElement("span");info.textContent="الجزء "+row.juz+" — "+row.participant_name;
@@ -290,38 +292,36 @@ async function loadAdminReservations(){
    btn.addEventListener("click",async()=>{
     if(!confirm("تأكيد إلغاء حجز الجزء "+row.juz+" باسم "+row.participant_name+"؟ لن يتأثر أي جزء مكتمل."))return;
     btn.disabled=true;
-    try{
-     const ok=await adminRpc("admin_cancel_reserved_juz",{p_juz:row.juz});
-     if(ok===true){status.textContent="تم إلغاء حجز الجزء "+row.juz+".";await refresh();await loadAdminReservations();}
-     else{status.textContent="الحجز لم يعد موجوداً أو أصبح مكتملاً.";await refresh();await loadAdminReservations();}
-    }catch(e){btn.disabled=false;status.textContent="تعذر الإلغاء: "+e.message;}
+    try{const ok=await adminRpc("admin_cancel_reserved_juz",{p_juz:row.juz});status.textContent=ok?"تم إلغاء حجز الجزء "+row.juz+".":"الحجز لم يعد موجوداً أو أصبح مكتملاً.";await refresh();await loadAdminReservations();}
+    catch(e){btn.disabled=false;status.textContent="تعذر الإلغاء: "+e.message;}
    });
    item.append(info,btn);box.append(item);
   });
   status.textContent="عدد الحجوزات غير المكتملة: "+rows.length;
- }catch(e){status.textContent="تعذر تحميل القائمة: "+e.message;}
+ }catch(e){status.textContent="تعذر تحميل القائمة: "+e.message;showAdminLoggedOut();}
 }
-$("adminLoginBtn").addEventListener("click",async()=>{
- const email=$("adminEmail").value.trim(),password=$("adminPassword").value;
- if(!email||!password){alert("اكتبي البريد الإلكتروني وكلمة المرور.");return;}
- const btn=$("adminLoginBtn");btn.disabled=true;btn.textContent="جارٍ التحقق...";
- try{
-  const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
-   method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
-   body:JSON.stringify({email,password})
-  });
-  const data=await response.json();
-  if(!response.ok||!data.access_token)throw new Error(data.msg||data.message||"بيانات الدخول غير صحيحة.");
-  adminAccessToken=data.access_token;
-  $("adminLogin").hidden=true;$("adminPanel").hidden=false;
-  await loadAdminReservations();
-  if($("adminStatus").textContent.startsWith("تعذر")){showAdminLoggedOut();throw new Error("هذا الحساب غير مخوّل للإدارة أو تعذر التحقق منه.");}
- }catch(e){showAdminLoggedOut();alert("تعذر دخول الإدارة: "+e.message);}
- finally{btn.disabled=false;btn.textContent="دخول الإدارة";}
+async function verifyAdminToken(token){
+ const response=await fetch(SUPABASE_URL+"/auth/v1/user",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+token}});
+ const user=await response.json();
+ if(!response.ok||!user.email||user.email.toLowerCase()!==ADMIN_EMAIL)throw new Error("هذا الحساب غير مخوّل لعرض لوحة الإدارة.");
+ adminAccessToken=token;localStorage.setItem(ADMIN_TOKEN_KEY,token);
+ $("adminSection").hidden=false;$("adminLogin").hidden=true;$("adminPanel").hidden=false;
+ await loadAdminReservations();
+}
+$("adminLoginBtn").addEventListener("click",()=>{
+ const redirect=window.location.origin+window.location.pathname;
+ window.location.href=SUPABASE_URL+"/auth/v1/authorize?provider=google&redirect_to="+encodeURIComponent(redirect);
 });
 $("adminRefresh").addEventListener("click",loadAdminReservations);
-$("adminLogout").addEventListener("click",showAdminLoggedOut);
-
+$("adminLogout").addEventListener("click",async()=>{
+ if(adminAccessToken){try{await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+adminAccessToken}});}catch(e){}}
+ showAdminLoggedOut();
+});
+(async()=>{
+ const hash=new URLSearchParams(window.location.hash.slice(1)),token=hash.get("access_token");
+ if(token){history.replaceState(null,"",window.location.pathname+window.location.search);try{await verifyAdminToken(token);}catch(e){showAdminLoggedOut();alert(e.message);}}
+ else{const saved=localStorage.getItem(ADMIN_TOKEN_KEY);if(saved){try{await verifyAdminToken(saved);}catch(e){showAdminLoggedOut();}}}
+})();
 function validState(s){return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function currentCounts(){
