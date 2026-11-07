@@ -52,7 +52,7 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 .status{font-size:11px;border-radius:30px;padding:3px 8px;background:#edf3ed;color:#47724f;white-space:nowrap}
 .status.busy{background:#f8f0e4;color:#976b2f}
 .status.done{background:#e7f2e9;color:#347046}
-.part .person{font-size:12px;color:var(--muted);min-height:22px;margin:7px 0}
+.part .person{font-size:14px;font-weight:700;color:var(--green);min-height:24px;margin:8px 0;overflow-wrap:anywhere}.part .person:empty{display:none}
 .part label{font-size:12px;color:#52645a;display:flex;align-items:center;gap:6px}
 .part input[type=checkbox]{accent-color:var(--green2);width:17px;height:17px}
 .part-actions{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
@@ -488,7 +488,7 @@ function render(){
   const top=document.createElement("div");top.className="part-top";
   const title=document.createElement("strong");title.textContent="الجزء "+i;top.append(title);
   const badge=document.createElement("span");badge.className="status"+(p&&p.done?" done":p?" busy":"");badge.textContent=p&&p.pending?"بانتظار المزامنة":p&&p.done?"تمت القراءة":p?"محجوز":"متاح";top.append(badge);card.append(top);
-  const person=document.createElement("div");person.className="person";person.textContent=p?(p.done?"تمت القراءة":"محجوز"):"متاح للمشاركة";card.append(person);
+  const person=document.createElement("div");person.className="person";person.textContent=p?(p.name||"مشارك"):"متاح للمشاركة";card.append(person);
   if(!p){
    const label=document.createElement("label");
    const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);
