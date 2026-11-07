@@ -365,6 +365,7 @@ async function adminRpc(name,args){
 function showAdminLoggedOut(){
  adminAccessToken=null;adminRefreshToken=null;adminExpiresAt=0;localStorage.removeItem(ADMIN_TOKEN_KEY);localStorage.removeItem("anwar_admin_access_token");
  $("adminSection").hidden=true;$("adminLogin").hidden=false;$("adminPanel").hidden=true;
+ render();
 }
 async function loadAdminReservations(){
  const box=$("adminReservations"),status=$("adminStatus");
@@ -400,6 +401,7 @@ async function verifyAdminToken(token,refreshToken=null){
  if(!response.ok||!user.email||user.email.toLowerCase()!==ADMIN_EMAIL)throw new Error("هذا الحساب غير مخوّل لعرض لوحة الإدارة.");
  saveAdminSession({access_token:adminAccessToken,refresh_token:adminRefreshToken,expires_in:3600});
  $("adminSection").hidden=false;$("adminLogin").hidden=true;$("adminPanel").hidden=false;
+ render();
  await loadAdminReservations();
 }
 $("adminEntry").addEventListener("click",()=>{$("adminSection").hidden=false;$("adminSection").scrollIntoView({behavior:"smooth"});});
@@ -495,6 +497,10 @@ function render(){
    const label=document.createElement("label");
    const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);
    label.append(check,document.createTextNode("اختيار الجزء"));card.append(label);
+  }else if(!p.done && !p.pending && adminAccessToken){
+   const actions=document.createElement("div");actions.className="part-actions";
+   const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="قراءة الجزء (الإدارة)";read.addEventListener("click",()=>openReader(i,true));actions.append(read);
+   card.append(actions);
   }else if(!p.done && !p.pending && claims[i]){
    const actions=document.createElement("div");actions.className="part-actions";
    const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="قراءة الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
@@ -841,17 +847,25 @@ function makeWarshTextPage(layout,page){
  const caption=document.createElement("figcaption");caption.textContent="صفحة "+arabicDigits(page)+" — رواية ورش عن نافع";figure.append(caption);
  return figure;
 }
-async function openReader(juz){
+async function openReader(juz,adminMode=false){
  stopVerseAudio();
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
- const claim=claims[activeJuz];
- if(!claim){alert("هذا الجزء ليس محجوزاً من هذا الجهاز؛ لا يمكنك فتحه.");return;}
- try{
-  const allowed=await rpc("verify_juz_claim",{p_juz:activeJuz,p_token:claim});
-  if(allowed!==true){alert("الدخول لهذا الجزء مسموح فقط للمشارك الذي حجزه، أو أن الحجز أُلغي/اكتملت قراءته.");return;}
- }catch(error){alert("تعذر التحقق من ملكية الحجز. تحققي من الإنترنت ثم أعيدي المحاولة.");return;}
+ if(adminMode){
+  try{
+   await ensureAdminSession();
+   const reserved=await adminRpc("admin_list_reserved_juz",{});
+   if(!reserved.some(row=>Number(row.juz)===activeJuz)){alert("هذا الجزء لم يعد محجوزاً؛ حدّثي قائمة الأجزاء.");return;}
+  }catch(error){alert("صلاحية الإدارة غير صالحة أو انتهت. سجلي الدخول مجدداً.");showAdminLoggedOut();render();return;}
+ }else{
+  const claim=claims[activeJuz];
+  if(!claim){alert("هذا الجزء ليس محجوزاً من هذا الجهاز؛ لا يمكنك فتحه.");return;}
+  try{
+   const allowed=await rpc("verify_juz_claim",{p_juz:activeJuz,p_token:claim});
+   if(allowed!==true){alert("الدخول لهذا الجزء مسموح فقط للمشارك الذي حجزه، أو أن الحجز أُلغي/اكتملت قراءته.");return;}
+  }catch(error){alert("تعذر التحقق من ملكية الحجز. تحققي من الإنترنت ثم أعيدي المحاولة.");return;}
+ }
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
- $("readerNotice").textContent="نص القرآن برواية ورش عن نافع بحروف عربية واضحة ونقطها المعتادة، مع الحفاظ على ترتيب صفحات ورش وحدود الأجزاء.";
+ $("readerNotice").textContent=adminMode?"وضع الإدارة: يمكنك معاينة هذا الجزء المحجوز للمتابعة فقط؛ لا يؤثر فتحه على حجز المشارك.":"نص القرآن برواية ورش عن نافع بحروف عربية واضحة ونقطها المعتادة، مع الحفاظ على ترتيب صفحات ورش وحدود الأجزاء.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
  const reader=$("warshReader");reader.innerHTML="";
  $("mushafPageFoot").textContent="جارٍ التحقق من حدود الجزء...";
