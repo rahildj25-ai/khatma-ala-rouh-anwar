@@ -111,7 +111,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <p class="help">دخول خاص بصاحبة الموقع لإلغاء الحجوزات غير المكتملة فقط.</p>
   <div id="adminLogin">
    <p class="help">أدخلي رابط دخول آمن إلى بريد الإدارة المعتمد، دون كلمة مرور.</p>
-   <p dir="ltr" style="text-align:center;font-weight:700">rahil.dj25@gmail.com</p>
+   <p dir="ltr" style="text-align:center;font-weight:700">r********@gmail.com</p>
    <button class="btn" id="adminLoginBtn" type="button">إرسال رابط الدخول إلى بريدي</button>
    <p class="help" id="adminLoginStatus" role="status" aria-live="polite"></p>
   </div>
@@ -323,7 +323,7 @@ $("adminLoginBtn").addEventListener("click",async()=>{
   });
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.msg||data.message||data.error_description||"تعذر إرسال رابط الدخول.");
-  status.textContent="تم إرسال رابط الدخول إلى "+ADMIN_EMAIL+". افتحي بريدك واضغطي الرابط. قد يستغرق وصوله دقائق.";
+  status.textContent="تم إرسال رابط الدخول إلى r********@gmail.com. افتحي بريدك واضغطي الرابط. قد يستغرق وصوله دقائق.";
  }catch(e){status.textContent="تعذر إرسال الرابط: "+e.message;}
  finally{btn.disabled=false;btn.textContent="إرسال رابط الدخول إلى بريدي";}
 });
