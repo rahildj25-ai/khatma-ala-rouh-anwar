@@ -80,7 +80,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 
 
 /* القائمة الجانبية والأقسام الإضافية */
-.side-menu-toggle{position:fixed;right:12px;top:48%;z-index:70;width:48px;height:54px;border:1px solid #dce6dc;border-radius:14px;background:#fff;color:var(--green);box-shadow:0 5px 20px #203b2b20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.side-menu-toggle{position:fixed;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:70;width:48px;height:54px;border:1px solid #dce6dc;border-radius:14px;background:#fff;color:var(--green);box-shadow:0 5px 20px #203b2b20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .side-menu-toggle span{display:block;width:22px;height:2px;border-radius:2px;background:var(--green)}
 .menu-backdrop{position:fixed;inset:0;z-index:75;background:#14251dcc}
 .side-menu{position:fixed;top:0;right:0;bottom:0;z-index:80;width:min(330px,88vw);padding:22px 18px;background:#fff;box-shadow:-12px 0 35px #0002;overflow:auto}
@@ -99,7 +99,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 .prayer-item p{margin:6px 0;line-height:2;white-space:pre-wrap;overflow-wrap:anywhere}
 .prayer-item time{font-size:11px;color:var(--muted)}
 .hp-field{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
-@media(max-width:560px){.side-menu-toggle{right:8px;width:43px;height:50px}.side-menu{padding:18px 14px}}
+@media(max-width:560px){.side-menu-toggle{right:8px;top:calc(10px + env(safe-area-inset-top));width:43px;height:50px}.side-menu{padding:18px 14px}}
 
 </style>
 </head>
@@ -257,7 +257,15 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
  </div>
  <p class="help" id="connection" role="status" aria-live="polite"></p>
 </main>
-<footer>ختمة ودعاء على روح فقيدنا أنور 🤍<br><button class="btn secondary small" id="adminEntry" type="button">دخول الإدارة</button></footer>
+<footer>
+ ختمة ودعاء على روح فقيدنا أنور 🤍
+ <div style="margin-top:14px;line-height:2">
+  <strong>للاستفسار أو طرح أي مشكلة يرجى التواصل على:</strong><br>
+  التيكتوك:
+  <a href="https://www.tiktok.com/@of.riya6" target="_blank" rel="noopener noreferrer" style="color:var(--green);font-weight:800;text-decoration:underline;direction:ltr;display:inline-block">@of.riya6</a>
+ </div>
+ <div style="margin-top:14px"><button class="btn secondary small" id="adminEntry" type="button">دخول الإدارة</button></div>
+</footer>
 <div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
  <div class="reader-panel">
   <div class="reader-head">
