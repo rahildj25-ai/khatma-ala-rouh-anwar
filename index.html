@@ -299,7 +299,7 @@ async function loadAdminReservations(){
    item.append(info,btn);box.append(item);
   });
   status.textContent="عدد الحجوزات غير المكتملة: "+rows.length;
- }catch(e){status.textContent="تعذر تحميل القائمة: "+e.message;showAdminLoggedOut();}
+ }catch(e){status.textContent="تعذر تحميل الحجوزات: "+e.message+" — تحققي من صلاحية الحساب والاتصال ثم اضغطي تحديث القائمة.";box.innerHTML='<p class="empty">لم نتمكن من جلب الحجوزات. اضغطي «تحديث القائمة» بعد التأكد من تسجيل الدخول.</p>';}
 }
 async function verifyAdminToken(token){
  const response=await fetch(SUPABASE_URL+"/auth/v1/user",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+token}});
