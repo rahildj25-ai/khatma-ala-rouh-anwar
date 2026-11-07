@@ -21,7 +21,7 @@ button{cursor:pointer}
 .hero-inner{position:relative;max-width:850px;margin:auto}
 .mark{display:inline-grid;place-items:center;width:58px;height:58px;border:1px solid #ffffff55;border-radius:50%;font-size:27px;margin-bottom:10px}
 .hero h1{font-size:clamp(27px,5vw,42px);margin:4px 0 8px;letter-spacing:.2px}
-.hero .sub{color:#e3ece4;margin:0 auto;max-width:650px;font-size:15px}
+.hero .sub{color:#e3ece4;margin:0 auto;max-width:650px;font-size:15px}.memorial-dua{position:relative;max-width:790px;margin:22px auto 0;padding:19px 22px 16px;border:1px solid #ffffff70;border-radius:18px;background:linear-gradient(145deg,#ffffff20,#ffffff0d);box-shadow:inset 0 1px 0 #ffffff24,0 8px 24px #10281d24;color:#fff;text-align:center}.memorial-dua p{margin:0;font-family:"Amiri","Noto Naskh Arabic","Traditional Arabic",Tahoma,serif;font-size:clamp(17px,2.5vw,21px);font-weight:500;line-height:2.05;letter-spacing:.1px;text-shadow:0 1px 2px #132d2160}.dua-ornament{display:block;color:#f1dfb5;font-size:17px;line-height:1.1}.memorial-dua .dua-ornament:first-child{margin-bottom:9px}.memorial-dua .dua-ornament:last-child{margin-top:9px}
 .verse{margin:22px auto 0;padding:13px 18px;max-width:650px;border-top:1px solid #ffffff38;border-bottom:1px solid #ffffff38;color:#f6e9c9;font-size:18px;line-height:2}.verse-audio-controls{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:12px}.verse-audio-controls .btn{background:#f6e9c9;color:#244638;border:1px solid #fff3d4}.verse-audio-controls span{font-size:12px;color:#e3ece4}
 main{width:min(100% - 28px,980px);margin:25px auto 50px}
 .card{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:22px;margin:17px 0;box-shadow:var(--shadow)}
@@ -116,6 +116,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <div class="mark" aria-hidden="true">۞</div>
    <h1>ختمة لخويا أنور</h1>
    <p class="sub">ختمة قرآنية جماعية، نهدي ثوابها ونسأل الله أن يتقبلها ويرحم فقيدنا.</p>
+   <div class="memorial-dua" lang="ar" dir="rtl"><span class="dua-ornament" aria-hidden="true">۞</span><p>اللهم ارحم أخي وصديقي أنوار رحمةً واسعة، اللهم اغفر له واعف عنه، وأكرم نزله، ووسع مدخله، واجعل قبره روضةً من رياض الجنة. اللهم آنس وحشته، ونور قبره، وارفع درجته في المهديين، واجمعنا به في جنات النعيم يا أرحم الراحمين. اللهم اجعل كل دعاء له نورًا، وكل ذكرى جميلة صدقةً في ميزان حسناته. اللهم إنا اشتقنا إليه، فاجعل شوقنا له دعاءً يصل إليه🤍</p><span class="dua-ornament" aria-hidden="true">۞</span></div>
    <div class="verse">﴿ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾
     <div class="verse-audio-controls"><button class="btn secondary" id="verseAudioToggle" type="button" aria-pressed="false">▶ استمع للتلاوة — الشيخ عبد الرحمن السديس</button><span id="verseAudioStatus" role="status" aria-live="polite">اضغطي للاستماع</span><span>مصدر التلاوة: <a href="https://everyayah.com/" target="_blank" rel="noopener noreferrer" style="color:#f6e9c9;text-decoration:underline">EveryAyah</a></span></div>
     <audio id="verseAudio" preload="none"></audio>
