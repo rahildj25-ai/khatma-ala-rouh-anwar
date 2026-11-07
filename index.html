@@ -196,7 +196,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
  </section>
  <p class="help" id="connection" role="status" aria-live="polite"></p>
 </main>
-<footer>ختمة ودعاء على روح فقيدنا أنور 🤍</footer>
+<footer>ختمة ودعاء على روح فقيدنا أنور 🤍<br><button class="btn secondary small" id="adminEntry" type="button">دخول الإدارة</button></footer>
 <div id="readerOverlay" class="reader-overlay" role="dialog" aria-modal="true" aria-labelledby="readerTitle">
  <div class="reader-panel">
   <div class="reader-head">
@@ -308,6 +308,7 @@ async function verifyAdminToken(token){
  $("adminSection").hidden=false;$("adminLogin").hidden=true;$("adminPanel").hidden=false;
  await loadAdminReservations();
 }
+$("adminEntry").addEventListener("click",()=>{$("adminSection").hidden=false;$("adminSection").scrollIntoView({behavior:"smooth"});});
 $("adminLoginBtn").addEventListener("click",()=>{
  const redirect=window.location.origin+window.location.pathname;
  window.location.href=SUPABASE_URL+"/auth/v1/authorize?provider=google&redirect_to="+encodeURIComponent(redirect);
