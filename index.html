@@ -78,6 +78,29 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 .hero-copy{min-width:0}
 @media(max-width:650px){.hero-inner.hero-layout{grid-template-columns:1fr;gap:15px}.memorial-photos{max-width:310px;width:100%;margin:0 auto}.memorial-photos img{height:130px}.memorial-photos p{font-size:15px}.hero{padding-top:25px}}
 
+
+/* القائمة الجانبية والأقسام الإضافية */
+.side-menu-toggle{position:fixed;right:12px;top:48%;z-index:70;width:48px;height:54px;border:1px solid #dce6dc;border-radius:14px;background:#fff;color:var(--green);box-shadow:0 5px 20px #203b2b20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.side-menu-toggle span{display:block;width:22px;height:2px;border-radius:2px;background:var(--green)}
+.menu-backdrop{position:fixed;inset:0;z-index:75;background:#14251dcc}
+.side-menu{position:fixed;top:0;right:0;bottom:0;z-index:80;width:min(330px,88vw);padding:22px 18px;background:#fff;box-shadow:-12px 0 35px #0002;overflow:auto}
+.menu-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--line);color:var(--green);font-weight:700;font-size:18px}
+.menu-close{border:0;background:#edf2ec;color:var(--green);border-radius:10px;width:38px;height:38px;font-size:22px}
+.menu-choice{display:flex;align-items:center;gap:12px;width:100%;padding:14px 12px;margin:9px 0;border:1px solid var(--line);border-radius:13px;background:#fbfcfa;color:var(--green);text-align:right;font-weight:700}
+.menu-choice:active{background:var(--sage)}
+.menu-choice .menu-icon{width:36px;height:36px;display:grid;place-items:center;background:var(--sage);border-radius:11px;font-size:19px;flex:0 0 auto}
+.menu-back{margin:0 0 14px}
+#menuViews{min-height:45vh}
+#prayerForm{display:grid;gap:10px;margin:14px 0}
+#prayerForm textarea{width:100%;min-height:120px;resize:vertical;border:1px solid #d6dfd6;border-radius:12px;padding:12px 14px;font:inherit;color:var(--ink)}
+#prayerForm textarea:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px #426b5418}
+.prayer-item{border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin:10px 0;background:#fcfdfb}
+.prayer-item strong{color:var(--green)}
+.prayer-item p{margin:6px 0;line-height:2;white-space:pre-wrap;overflow-wrap:anywhere}
+.prayer-item time{font-size:11px;color:var(--muted)}
+.hp-field{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+@media(max-width:560px){.side-menu-toggle{right:8px;width:43px;height:50px}.side-menu{padding:18px 14px}}
+
 </style>
 </head>
 <body>
@@ -99,7 +122,20 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   </div>
  </div>
 </header>
+
+<button class="side-menu-toggle" id="menuToggle" type="button" aria-label="فتح القائمة الجانبية" aria-expanded="false" aria-controls="sideMenu">
+ <span></span><span></span><span></span><span></span>
+</button>
+<div class="menu-backdrop" id="menuBackdrop" hidden></div>
+<nav class="side-menu" id="sideMenu" aria-label="أقسام الموقع" hidden>
+ <div class="menu-head"><span>أقسام الدعاء والذكر</span><button class="menu-close" id="menuClose" type="button" aria-label="إغلاق القائمة">×</button></div>
+ <button class="menu-choice" type="button" data-menu-target="dhikrSection"><span class="menu-icon">📿</span><span>مسبحة الاستغفار والصلاة على النبي ﷺ</span></button>
+ <button class="menu-choice" type="button" data-menu-target="duaSection"><span class="menu-icon">🕊️</span><span>أدعية مأثورة للمرحوم</span></button>
+ <button class="menu-choice" type="button" data-menu-target="khatmDuaSection"><span class="menu-icon">🤲</span><span>دعاء ختم القرآن للمرحوم</span></button>
+ <button class="menu-choice" type="button" data-menu-target="subscriberDuaSection"><span class="menu-icon">💬</span><span>أدعية المشتركين للمرحوم</span></button>
+</nav>
 <main>
+ <div id="homeView">
  <section class="card intro">
   <h2 class="section-head"><span class="ico">🤍</span> النية</h2>
   <p style="font-size:18px;line-height:2.1;color:var(--green);font-weight:700">يشهد الله اني اعمل هذا لا تفاخرا ولا رياءا وإنما لوجه الله تعالى فاللهم تقبله منا يارب</p>
@@ -148,7 +184,10 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <p class="help">بعد الحجز، اضغطي «اقرأ الجزء». ستظهر صفحات الجزء المحجوز فقط، مرتبة تحت بعضها من البداية إلى النهاية.</p>
   <div class="notice">لا يمكن الانتقال إلى جزء آخر من داخل عارض القراءة؛ كل مشارك يشاهد صفحات الجزء الذي حجزه فقط.</div>
  </section>
- <section class="card" id="dhikrSection">
+ </div>
+ <div id="menuViews" hidden>
+  <button class="btn secondary small menu-back" id="menuBackHome" type="button">← الرجوع إلى القرآن والحجوزات</button>
+ <section class="card" id="dhikrSection" hidden>
   <h2 class="section-head"><span class="ico">📿</span> المسبحة الجماعية</h2>
   <p class="help">اختاري نوع الذكر، وكل ضغطة تتسجل في العداد المشترك وتظهر عند جميع المشاركين.</p>
   <div class="parts" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
@@ -169,7 +208,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   </div>
   <p class="help" id="dhikrStatus" role="status" aria-live="polite">عداد مشترك لجميع المشاركين.</p>
  </section>
- <section class="card" id="duaSection">
+ <section class="card" id="duaSection" hidden>
   <h2 class="section-head"><span class="ico">🕊️</span> أدعية للفقيد أنور</h2>
   <p class="help">اضغطي على الزر باش تخرجيلك مجموعة أدعية تقراي منها.</p>
   <button class="btn" id="showDuas" type="button" aria-expanded="false">عرض مجموعة الأدعية</button>
@@ -190,7 +229,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <h2 class="section-head"><span class="ico">🗂️</span> سجل الختمات السابقة</h2>
   <div id="history"><p class="empty">لا توجد ختمات مكتملة بعد.</p></div>
  </section>
- <section class="card" id="khatmDuaSection">
+ <section class="card" id="khatmDuaSection" hidden>
   <h2 class="section-head"><span class="ico">🤲</span> دعاء ختم القرآن على روح المرحوم أنور</h2>
   <div class="dua-list">
    <p>اللهم تقبّل منا تلاوة كتابك الكريم، واجعل ثواب ما قرأناه نورًا ورحمةً تصل إلى عبدك أنور برحمتك وفضلك.</p>
@@ -199,6 +238,23 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <p>اللهم اجزه عنّا خير الجزاء، واجمعنا به في جنات النعيم، وتقبّل من كل من قرأ وشارك ودعا له، إنك أنت الغفور الرحيم.</p>
   </div>
  </section>
+
+ <section class="card" id="subscriberDuaSection" hidden>
+  <h2 class="section-head"><span class="ico">💬</span> أدعية المشتركين للمرحوم أنور</h2>
+  <p class="help">اتركي دعاءً أو كلمة طيبة للمرحوم أنور. المشاركات تظهر للزوار جميعاً، لذلك لا تكتبي معلومات شخصية أو أرقام هاتف.</p>
+  <form id="prayerForm">
+   <label class="help" for="prayerName">الاسم (اختياري)</label>
+   <input id="prayerName" type="text" maxlength="40" placeholder="اسمك أو اتركيه فارغاً">
+   <label class="help" for="prayerMessage">دعاؤك أو تعليقك</label>
+   <textarea id="prayerMessage" maxlength="1000" required placeholder="اللهم اغفر له وارحمه..."></textarea>
+   <input id="prayerWebsite" class="hp-field" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+   <button class="btn" id="submitPrayer" type="submit">نشر الدعاء</button>
+   <p class="help" id="prayerStatus" role="status" aria-live="polite"></p>
+  </form>
+  <h3 class="section-head" style="font-size:17px">دعوات الزوار</h3>
+  <div id="prayerList"><p class="empty">اضغطي لعرض الأدعية.</p></div>
+ </section>
+ </div>
  <p class="help" id="connection" role="status" aria-live="polite"></p>
 </main>
 <footer>ختمة ودعاء على روح فقيدنا أنور 🤍<br><button class="btn secondary small" id="adminEntry" type="button">دخول الإدارة</button></footer>
@@ -550,6 +606,72 @@ async function flushReservationQueue(){
  }
  await refresh();
 }
+
+function closeSideMenu(){
+ $("sideMenu").hidden=true;$("menuBackdrop").hidden=true;
+ $("menuToggle").setAttribute("aria-expanded","false");
+}
+function openSideMenu(){
+ $("sideMenu").hidden=false;$("menuBackdrop").hidden=false;
+ $("menuToggle").setAttribute("aria-expanded","true");
+}
+function showMenuSection(id){
+ const ids=["dhikrSection","duaSection","khatmDuaSection","subscriberDuaSection"];
+ $("homeView").hidden=true;$("menuViews").hidden=false;
+ ids.forEach(sectionId=>$(sectionId).hidden=sectionId!==id);
+ closeSideMenu();
+ $("menuViews").scrollIntoView({behavior:"smooth",block:"start"});
+ if(id==="subscriberDuaSection")loadPrayerComments();
+}
+function returnToHome(){
+ $("menuViews").hidden=true;$("homeView").hidden=false;
+ ["dhikrSection","duaSection","khatmDuaSection","subscriberDuaSection"].forEach(id=>$(id).hidden=true);
+ $("homeView").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("menuToggle").addEventListener("click",()=>{$("sideMenu").hidden?openSideMenu():closeSideMenu();});
+$("menuClose").addEventListener("click",closeSideMenu);
+$("menuBackdrop").addEventListener("click",closeSideMenu);
+document.querySelectorAll("[data-menu-target]").forEach(button=>button.addEventListener("click",()=>showMenuSection(button.dataset.menuTarget)));
+$("menuBackHome").addEventListener("click",returnToHome);
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSideMenu();});
+async function loadPrayerComments(){
+ const box=$("prayerList"),status=$("prayerStatus");
+ box.innerHTML='<p class="empty">جارٍ تحميل الأدعية...</p>';
+ try{
+  const rows=await api("/rest/v1/anwar_prayer_comments?select=id,display_name,message,created_at&order=created_at.desc&limit=100");
+  box.innerHTML="";
+  if(!rows.length){box.innerHTML='<p class="empty">كوني أول من يترك دعاءً لأنور.</p>';return;}
+  rows.forEach(row=>{
+   const item=document.createElement("article");item.className="prayer-item";
+   const name=document.createElement("strong");name.textContent=row.display_name||"زائر";
+   const message=document.createElement("p");message.textContent=row.message||"";
+   const date=document.createElement("time");date.dateTime=row.created_at;
+   date.textContent=new Date(row.created_at).toLocaleString("ar-DZ",{dateStyle:"medium",timeStyle:"short"});
+   item.append(name,message,date);box.append(item);
+  });
+ }catch(error){
+  box.innerHTML='<p class="empty">تعذر تحميل الأدعية حالياً. أعيدي المحاولة بعد قليل.</p>';
+  status.textContent="تعذر الاتصال بقسم الأدعية: "+error.message;
+ }
+}
+$("prayerForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ const status=$("prayerStatus"),button=$("submitPrayer");
+ if($("prayerWebsite").value.trim())return;
+ const message=$("prayerMessage").value.trim();
+ const name=$("prayerName").value.trim()||"زائر";
+ if(message.length<2){status.textContent="اكتبي دعاءً أو تعليقاً قصيراً على الأقل.";return;}
+ button.disabled=true;button.textContent="جارٍ نشر الدعاء...";
+ status.textContent="نحفظ مشاركتك...";
+ try{
+  await api("/rest/v1/anwar_prayer_comments",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify({display_name:name,message})});
+  $("prayerMessage").value="";
+  status.textContent="تم نشر دعائك، بارك الله فيكِ.";
+  await loadPrayerComments();
+ }catch(error){status.textContent="ما قدرناش ننشر الدعاء حالياً. عاودي المحاولة بعد قليل.";}
+ finally{button.disabled=false;button.textContent="نشر الدعاء";}
+});
+
 let dhikrBusy={istighfar:false,salawat:false};
 async function refreshDhikr(){
  try{
