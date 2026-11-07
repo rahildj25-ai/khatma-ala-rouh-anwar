@@ -271,13 +271,30 @@ async function rpc(name,args){
 
 let adminAccessToken=null;
 const ADMIN_EMAIL="rahil.dj25@gmail.com";
-const ADMIN_TOKEN_KEY="anwar_admin_access_token";
-async function adminRpc(name,args){
+const ADMIN_TOKEN_KEY="anwar_admin_session_v2";
+let adminRefreshToken=null,adminExpiresAt=0;
+function saveAdminSession(data){
+ adminAccessToken=data.access_token;adminRefreshToken=data.refresh_token||adminRefreshToken;
+ adminExpiresAt=Date.now()+Math.max(60,Number(data.expires_in||3600))*1000;
+ localStorage.setItem(ADMIN_TOKEN_KEY,JSON.stringify({access_token:adminAccessToken,refresh_token:adminRefreshToken,expires_at:adminExpiresAt}));
+}
+async function refreshAdminSession(){
+ if(!adminRefreshToken)throw new Error("انتهت الجلسة؛ سجلي الدخول مرة أخرى.");
+ const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:adminRefreshToken})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||!data.access_token)throw new Error("انتهت الجلسة؛ سجلي الدخول مرة أخرى.");
+ saveAdminSession(data);
+}
+async function ensureAdminSession(){
  if(!adminAccessToken)throw new Error("سجلي الدخول أولاً");
+ if(Date.now()>adminExpiresAt-60000)await refreshAdminSession();
+}
+async function adminRpc(name,args){
+ await ensureAdminSession();
  return api("/rest/v1/rpc/"+name,{method:"POST",headers:{Authorization:"Bearer "+adminAccessToken},body:JSON.stringify(args||{})});
 }
 function showAdminLoggedOut(){
- adminAccessToken=null;localStorage.removeItem(ADMIN_TOKEN_KEY);
+ adminAccessToken=null;adminRefreshToken=null;adminExpiresAt=0;localStorage.removeItem(ADMIN_TOKEN_KEY);localStorage.removeItem("anwar_admin_access_token");
  $("adminSection").hidden=true;$("adminLogin").hidden=false;$("adminPanel").hidden=true;
 }
 async function loadAdminReservations(){
@@ -302,11 +319,17 @@ async function loadAdminReservations(){
   status.textContent="عدد الحجوزات غير المكتملة: "+rows.length;
  }catch(e){status.textContent="تعذر تحميل الحجوزات: "+e.message+" — تحققي من صلاحية الحساب والاتصال ثم اضغطي تحديث القائمة.";box.innerHTML='<p class="empty">لم نتمكن من جلب الحجوزات. اضغطي «تحديث القائمة» بعد التأكد من تسجيل الدخول.</p>';}
 }
-async function verifyAdminToken(token){
- const response=await fetch(SUPABASE_URL+"/auth/v1/user",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+token}});
- const user=await response.json();
+async function verifyAdminToken(token,refreshToken=null){
+ adminAccessToken=token;adminRefreshToken=refreshToken;adminExpiresAt=Date.now()+3600000;
+ let response=await fetch(SUPABASE_URL+"/auth/v1/user",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+adminAccessToken}});
+ let user=await response.json().catch(()=>({}));
+ if(!response.ok&&adminRefreshToken){
+  await refreshAdminSession();
+  response=await fetch(SUPABASE_URL+"/auth/v1/user",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+adminAccessToken}});
+  user=await response.json().catch(()=>({}));
+ }
  if(!response.ok||!user.email||user.email.toLowerCase()!==ADMIN_EMAIL)throw new Error("هذا الحساب غير مخوّل لعرض لوحة الإدارة.");
- adminAccessToken=token;localStorage.setItem(ADMIN_TOKEN_KEY,token);
+ saveAdminSession({access_token:adminAccessToken,refresh_token:adminRefreshToken,expires_in:3600});
  $("adminSection").hidden=false;$("adminLogin").hidden=true;$("adminPanel").hidden=false;
  await loadAdminReservations();
 }
@@ -334,16 +357,16 @@ $("adminLogout").addEventListener("click",async()=>{
 });
 (async()=>{
  const hash=new URLSearchParams(window.location.hash.slice(1)),params=new URLSearchParams(window.location.search);
- const token=hash.get("access_token"),type=hash.get("type");
+ const token=hash.get("access_token"),refreshToken=hash.get("refresh_token");
  if(token){
   history.replaceState(null,"",window.location.pathname+window.location.search);
-  try{await verifyAdminToken(token);}catch(e){showAdminLoggedOut();alert(e.message);}
+  try{await verifyAdminToken(token,refreshToken);}catch(e){showAdminLoggedOut();alert(e.message);}
  }else if(params.get("error_description")){
   const msg=params.get("error_description");history.replaceState(null,"",window.location.pathname);
   $("adminSection").hidden=false;$("adminLoginStatus").textContent="تعذر تأكيد البريد: "+msg;
  }else{
   const saved=localStorage.getItem(ADMIN_TOKEN_KEY);
-  if(saved){try{await verifyAdminToken(saved);}catch(e){showAdminLoggedOut();}}
+  if(saved){try{const session=JSON.parse(saved);await verifyAdminToken(session.access_token,session.refresh_token);if(session.expires_at)adminExpiresAt=session.expires_at;}catch(e){showAdminLoggedOut();}}
  }
 })();
 function validState(s){return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);}
