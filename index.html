@@ -110,9 +110,10 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <h2 class="section-head"><span class="ico">🔐</span> إدارة الختمة</h2>
   <p class="help">دخول خاص بصاحبة الموقع لإلغاء الحجوزات غير المكتملة فقط.</p>
   <div id="adminLogin">
-   <p class="help">الدخول متاح للبريد المعتمد فقط.</p>
-   <input id="adminPassword" type="password" autocomplete="current-password" placeholder="كلمة مرور الإدارة" aria-label="كلمة مرور الإدارة">
-   <button class="btn" id="adminLoginBtn" type="button">دخول الإدارة</button>
+   <p class="help">أدخلي رابط دخول آمن إلى بريد الإدارة المعتمد، دون كلمة مرور.</p>
+   <p dir="ltr" style="text-align:center;font-weight:700">rahil.dj25@gmail.com</p>
+   <button class="btn" id="adminLoginBtn" type="button">إرسال رابط الدخول إلى بريدي</button>
+   <p class="help" id="adminLoginStatus" role="status" aria-live="polite"></p>
   </div>
   <div id="adminPanel" hidden>
    <div class="selection-bar"><span class="help" id="adminStatus">الحجوزات الحالية</span><div><button class="btn secondary small" id="adminRefresh" type="button">تحديث القائمة</button><button class="btn secondary small" id="adminLogout" type="button">خروج</button></div></div>
@@ -311,19 +312,20 @@ async function verifyAdminToken(token){
 }
 $("adminEntry").addEventListener("click",()=>{$("adminSection").hidden=false;$("adminSection").scrollIntoView({behavior:"smooth"});});
 $("adminLoginBtn").addEventListener("click",async()=>{
- const password=$("adminPassword").value;
- if(!password){alert("أدخلي كلمة المرور.");return;}
- const btn=$("adminLoginBtn");btn.disabled=true;btn.textContent="جارٍ التحقق...";
+ const btn=$("adminLoginBtn"),status=$("adminLoginStatus");
+ btn.disabled=true;btn.textContent="جارٍ إرسال الرابط...";
+ status.textContent="نرسل رابط دخول آمن إلى بريد الإدارة...";
  try{
-  const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
+  const redirect=window.location.origin+window.location.pathname;
+  const response=await fetch(SUPABASE_URL+"/auth/v1/otp?redirect_to="+encodeURIComponent(redirect),{
    method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
-   body:JSON.stringify({email:ADMIN_EMAIL,password})
+   body:JSON.stringify({email:ADMIN_EMAIL,create_user:false})
   });
-  const data=await response.json();
-  if(!response.ok||!data.access_token)throw new Error(data.msg||data.message||"بيانات الدخول غير صحيحة.");
-  await verifyAdminToken(data.access_token);
- }catch(e){showAdminLoggedOut();alert("تعذر دخول الإدارة: "+e.message);}
- finally{btn.disabled=false;btn.textContent="دخول الإدارة";$("adminPassword").value="";}
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.msg||data.message||data.error_description||"تعذر إرسال رابط الدخول.");
+  status.textContent="تم إرسال رابط الدخول إلى "+ADMIN_EMAIL+". افتحي بريدك واضغطي الرابط. قد يستغرق وصوله دقائق.";
+ }catch(e){status.textContent="تعذر إرسال الرابط: "+e.message;}
+ finally{btn.disabled=false;btn.textContent="إرسال رابط الدخول إلى بريدي";}
 });
 $("adminRefresh").addEventListener("click",loadAdminReservations);
 $("adminLogout").addEventListener("click",async()=>{
@@ -331,9 +333,18 @@ $("adminLogout").addEventListener("click",async()=>{
  showAdminLoggedOut();
 });
 (async()=>{
- const hash=new URLSearchParams(window.location.hash.slice(1)),token=hash.get("access_token");
- if(token){history.replaceState(null,"",window.location.pathname+window.location.search);try{await verifyAdminToken(token);}catch(e){showAdminLoggedOut();alert(e.message);}}
- else{const saved=localStorage.getItem(ADMIN_TOKEN_KEY);if(saved){try{await verifyAdminToken(saved);}catch(e){showAdminLoggedOut();}}}
+ const hash=new URLSearchParams(window.location.hash.slice(1)),params=new URLSearchParams(window.location.search);
+ const token=hash.get("access_token"),type=hash.get("type");
+ if(token){
+  history.replaceState(null,"",window.location.pathname+window.location.search);
+  try{await verifyAdminToken(token);}catch(e){showAdminLoggedOut();alert(e.message);}
+ }else if(params.get("error_description")){
+  const msg=params.get("error_description");history.replaceState(null,"",window.location.pathname);
+  $("adminSection").hidden=false;$("adminLoginStatus").textContent="تعذر تأكيد البريد: "+msg;
+ }else{
+  const saved=localStorage.getItem(ADMIN_TOKEN_KEY);
+  if(saved){try{await verifyAdminToken(saved);}catch(e){showAdminLoggedOut();}}
+ }
 })();
 function validState(s){return s&&typeof s==="object"&&s.parts&&typeof s.parts==="object"&&Array.isArray(s.history);}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
