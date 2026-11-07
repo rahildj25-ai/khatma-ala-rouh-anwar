@@ -116,7 +116,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <p class="help" id="adminLoginStatus" role="status" aria-live="polite"></p>
   </div>
   <div id="adminPanel" hidden>
-   <div class="selection-bar"><span class="help" id="adminStatus">الحجوزات الحالية</span><div><button class="btn secondary small" id="adminRefresh" type="button">تحديث القائمة</button><button class="btn secondary small" id="adminLogout" type="button">خروج</button></div></div>
+   <div class="selection-bar"><span class="help" id="adminStatus">الحجوزات الحالية</span><div><button class="btn secondary small" id="adminRefresh" type="button">تحديث القائمة</button><button class="btn secondary small" id="adminChangePassword" type="button">تغيير كلمة المرور</button><button class="btn secondary small" id="adminLogout" type="button">خروج</button></div></div>
    <div id="adminReservations"><p class="empty">لا توجد حجوزات غير مكتملة.</p></div>
   </div>
  </section>
@@ -335,20 +335,40 @@ async function verifyAdminToken(token,refreshToken=null){
 }
 $("adminEntry").addEventListener("click",()=>{$("adminSection").hidden=false;$("adminSection").scrollIntoView({behavior:"smooth"});});
 $("adminLoginBtn").addEventListener("click",async()=>{
- const btn=$("adminLoginBtn"),status=$("adminLoginStatus");
- btn.disabled=true;btn.textContent="جارٍ إرسال الرابط...";
- status.textContent="نرسل رابط دخول آمن إلى بريد الإدارة...";
+ const btn=$("adminLoginBtn"),status=$("adminLoginStatus"),password=$("adminPassword").value;
+ if(!password){status.textContent="أدخلي كلمة المرور أولاً.";return;}
+ btn.disabled=true;btn.textContent="جارٍ التحقق...";
+ status.textContent="نتحقق من بيانات الدخول...";
  try{
-  const redirect=window.location.origin+window.location.pathname;
-  const response=await fetch(SUPABASE_URL+"/auth/v1/otp?redirect_to="+encodeURIComponent(redirect),{
+  const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
    method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
-   body:JSON.stringify({email:ADMIN_EMAIL,create_user:false})
+   body:JSON.stringify({email:ADMIN_EMAIL,password})
   });
   const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error(data.msg||data.message||data.error_description||"تعذر إرسال رابط الدخول.");
-  status.textContent="تم إرسال رابط الدخول إلى r********@gmail.com. افتحي بريدك واضغطي الرابط. قد يستغرق وصوله دقائق.";
- }catch(e){status.textContent="تعذر إرسال الرابط: "+e.message;}
- finally{btn.disabled=false;btn.textContent="إرسال رابط الدخول إلى بريدي";}
+  if(!response.ok||!data.access_token)throw new Error(data.msg||data.message||data.error_description||"كلمة المرور غير صحيحة.");
+  $("adminPassword").value="";
+  await verifyAdminToken(data.access_token,data.refresh_token);
+  status.textContent="";
+ }catch(e){status.textContent="تعذر الدخول: "+e.message;}
+ finally{btn.disabled=false;btn.textContent="دخول الإدارة";}
+});
+$("adminChangePassword").addEventListener("click",async()=>{
+ try{
+  await ensureAdminSession();
+  const next=prompt("أدخلي كلمة المرور الجديدة (8 أحرف على الأقل):");
+  if(next===null)return;
+  if(next.length<8){alert("كلمة المرور يجب أن تكون 8 أحرف على الأقل.");return;}
+  const confirmNext=prompt("أعيدي كتابة كلمة المرور الجديدة للتأكيد:");
+  if(confirmNext===null)return;
+  if(next!==confirmNext){alert("كلمتا المرور غير متطابقتين.");return;}
+  const response=await fetch(SUPABASE_URL+"/auth/v1/user",{
+   method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+adminAccessToken,"Content-Type":"application/json"},
+   body:JSON.stringify({password:next})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.msg||data.message||"تعذر تغيير كلمة المرور.");
+  alert("تم تغيير كلمة مرور الإدارة بنجاح.");
+ }catch(e){alert("تعذر تغيير كلمة المرور: "+e.message);}
 });
 $("adminRefresh").addEventListener("click",loadAdminReservations);
 $("adminLogout").addEventListener("click",async()=>{
