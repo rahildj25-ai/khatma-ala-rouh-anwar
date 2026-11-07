@@ -9,7 +9,7 @@
 <title>ختمة لخويا أنور</title>
 <style>
 :root{--green:#244638;--green2:#426b54;--sage:#e9f0e8;--cream:#f7f5ef;--gold:#c5a66b;--ink:#26382f;--muted:#718078;--white:#fff;--line:#e4e9e2;--shadow:0 12px 35px #203b2b12}
-*{box-sizing:border-box}
+*{box-sizing:border-box} .participants-disclosure{margin-top:10px;padding:10px 12px;border:1px solid #d8d0bd;border-radius:10px;background:#fffdf8}.participants-disclosure summary{cursor:pointer;color:#28543f;font-weight:700}.participants-list{margin:10px 0 0;padding:0 22px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 18px}.participants-list li{padding:3px 0}
 @font-face{font-family:"WarshQuranFallback";src:url("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@80361413c304107801895ba303ca01971f20bfe4/data/fonts/UthmanicWarsh-v-3.0.ttf") format("truetype");font-display:swap}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--cream);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.75}
@@ -546,10 +546,18 @@ async function renderHistory(){
    date.dateTime=row.completed_at;
    date.textContent="تاريخ الإكمال: "+new Date(row.completed_at).toLocaleString("ar-DZ",{dateStyle:"medium",timeStyle:"short"});
    const count=document.createElement("p");count.textContent="الأجزاء المكتملة: "+Number(row.completed_parts||30)+"/30";
-   const names=document.createElement("p");
    const participants=Array.isArray(row.participants)?row.participants:[];
-   names.textContent="المشاركون: "+participants.map(person=>"الجزء "+person.juz+": "+(person.name||"مشارك")).join("، ");
-   item.append(title,date,count,names);box.append(item);
+   const disclosure=document.createElement("details");disclosure.className="participants-disclosure";
+   const summary=document.createElement("summary");
+   summary.textContent="إظهار قائمة المشاركين ("+participants.length+")";
+   const names=document.createElement("ul");names.className="participants-list";
+   participants.slice().sort((a,b)=>Number(a.juz)-Number(b.juz)).forEach(person=>{
+    const entry=document.createElement("li");
+    entry.textContent="الجزء "+Number(person.juz)+": "+(person.name||"مشارك");
+    names.append(entry);
+   });
+   disclosure.append(summary,names);
+   item.append(title,date,count,disclosure);box.append(item);
   });
  }catch(error){
   box.innerHTML='<p class="empty">تعذر تحميل سجل الختمات الآن. سيُعاد التحديث تلقائياً.</p>';
