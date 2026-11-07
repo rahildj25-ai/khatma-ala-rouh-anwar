@@ -115,6 +115,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <label class="help" for="adminPassword">كلمة مرور الإدارة</label>
    <input id="adminPassword" type="password" autocomplete="current-password" placeholder="أدخلي كلمة المرور" style="width:100%;margin:8px 0;padding:12px;border:1px solid #bbb;border-radius:10px">
    <button class="btn" id="adminLoginBtn" type="button">دخول الإدارة</button>
+   <button class="btn secondary small" id="adminRecoverBtn" type="button" style="margin:8px auto;display:block">نسيت كلمة المرور؟ أرسلي رابط استعادة</button>
    <p class="help" id="adminLoginStatus" role="status" aria-live="polite"></p>
   </div>
   <div id="adminPanel" hidden>
@@ -336,6 +337,22 @@ async function verifyAdminToken(token,refreshToken=null){
  await loadAdminReservations();
 }
 $("adminEntry").addEventListener("click",()=>{$("adminSection").hidden=false;$("adminSection").scrollIntoView({behavior:"smooth"});});
+$("adminRecoverBtn").addEventListener("click",async()=>{
+ const btn=$("adminRecoverBtn"),status=$("adminLoginStatus");
+ btn.disabled=true;btn.textContent="جارٍ إرسال الرابط...";
+ status.textContent="نرسل رابط استعادة كلمة المرور إلى بريد الإدارة...";
+ try{
+  const redirectTo=window.location.origin+window.location.pathname;
+  const response=await fetch(SUPABASE_URL+"/auth/v1/recover?redirect_to="+encodeURIComponent(redirectTo),{
+   method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
+   body:JSON.stringify({email:ADMIN_EMAIL})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.msg||data.message||data.error_description||"تعذر إرسال رابط الاستعادة.");
+  status.textContent="إذا كان البريد مسجلاً، سيصلك رابط استعادة كلمة المرور. افتحيه من نفس الجهاز ثم عيّني كلمة مرور جديدة من لوحة الإدارة.";
+ }catch(e){status.textContent="تعذر إرسال الرابط: "+e.message;}
+ finally{btn.disabled=false;btn.textContent="نسيت كلمة المرور؟ أرسلي رابط استعادة";}
+});
 $("adminLoginBtn").addEventListener("click",async()=>{
  const btn=$("adminLoginBtn"),status=$("adminLoginStatus"),password=$("adminPassword").value;
  if(!password){status.textContent="أدخلي كلمة المرور أولاً.";return;}
