@@ -487,16 +487,16 @@ function render(){
   const card=document.createElement("article");card.className="part";
   const top=document.createElement("div");top.className="part-top";
   const title=document.createElement("strong");title.textContent="الجزء "+i;top.append(title);
-  const badge=document.createElement("span");badge.className="status"+(p&&p.done?" done":p?" busy":"");badge.textContent=p&&p.pending?"بانتظار المزامنة":p&&p.done?"مكتمل ✓":p?"محجوز":"متاح";top.append(badge);card.append(top);
-  const person=document.createElement("div");person.className="person";person.textContent=p?(p.done?"أتمّ القراءة: ":"حجزه: ")+p.name:"متاح للمشاركة";card.append(person);
+  const badge=document.createElement("span");badge.className="status"+(p&&p.done?" done":p?" busy":"");badge.textContent=p&&p.pending?"بانتظار المزامنة":p&&p.done?"تمت القراءة":p?"محجوز":"متاح";top.append(badge);card.append(top);
+  const person=document.createElement("div");person.className="person";person.textContent=p?(p.done?"تمت القراءة":"محجوز"):"متاح للمشاركة";card.append(person);
   if(!p){
    const label=document.createElement("label");
    const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);
    label.append(check,document.createTextNode("اختيار الجزء"));card.append(label);
-  }else if(!p.done){
+  }else if(!p.done && !p.pending && claims[i]){
    const actions=document.createElement("div");actions.className="part-actions";
-   const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="اقرأ الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
-   const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="تمت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
+   const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="قراءة الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
+   const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="أتممت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
    const cancel=document.createElement("button");cancel.type="button";cancel.className="btn secondary small";cancel.textContent="إلغاء الحجز";cancel.addEventListener("click",()=>cancelPart(i));actions.append(cancel);
    card.append(actions);
   }
@@ -815,6 +815,12 @@ async function renderFullWarshPage(page){
 async function openReader(juz){
  stopVerseAudio();
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
+ const claim=claims[activeJuz];
+ if(!claim){alert("هذا الجزء ليس محجوزاً من هذا الجهاز؛ لا يمكنك فتحه.");return;}
+ try{
+  const allowed=await rpc("verify_juz_claim",{p_juz:activeJuz,p_token:claim});
+  if(allowed!==true){alert("الدخول لهذا الجزء مسموح فقط للمشارك الذي حجزه، أو أن الحجز أُلغي/اكتملت قراءته.");return;}
+ }catch(error){alert("تعذر التحقق من ملكية الحجز. تحققي من الإنترنت ثم أعيدي المحاولة.");return;}
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
  $("readerNotice").textContent="تظهر صفحات مصحف ورش كاملة؛ والصفحة التي تجمع نهاية جزء وبداية الجزء التالي تظهر كاملة في الجزأين.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
