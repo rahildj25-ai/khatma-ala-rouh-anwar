@@ -1,4 +1,4 @@
-const SHELL_CACHE="anwar-shell-v13";
+const SHELL_CACHE="anwar-shell-v14";
 const PAGE_CACHE="anwar-warsh-pages-v1";
 const SHELL_FILES=["./","./index.html","./sw.js","./IMG_20261106_005137.png","./IMG_20261106_005153.jpg"];
 self.addEventListener("install",event=>{
