@@ -21,7 +21,7 @@ button{cursor:pointer}
 .mark{display:inline-grid;place-items:center;width:58px;height:58px;border:1px solid #ffffff55;border-radius:50%;font-size:27px;margin-bottom:10px}
 .hero h1{font-size:clamp(27px,5vw,42px);margin:4px 0 8px;letter-spacing:.2px}
 .hero .sub{color:#e3ece4;margin:0 auto;max-width:650px;font-size:15px}
-.verse{margin:22px auto 0;padding:13px 18px;max-width:650px;border-top:1px solid #ffffff38;border-bottom:1px solid #ffffff38;color:#f6e9c9;font-size:18px;line-height:2}
+.verse{margin:22px auto 0;padding:13px 18px;max-width:650px;border-top:1px solid #ffffff38;border-bottom:1px solid #ffffff38;color:#f6e9c9;font-size:18px;line-height:2}.verse-audio-controls{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:12px}.verse-audio-controls .btn{background:#f6e9c9;color:#244638;border:1px solid #fff3d4}.verse-audio-controls span{font-size:12px;color:#e3ece4}
 main{width:min(100% - 28px,980px);margin:25px auto 50px}
 .card{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:22px;margin:17px 0;box-shadow:var(--shadow)}
 .section-head{display:flex;align-items:center;gap:10px;margin:0 0 12px;color:var(--green);font-size:20px}
@@ -92,7 +92,10 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <div class="mark" aria-hidden="true">۞</div>
    <h1>ختمة لخويا أنور</h1>
    <p class="sub">ختمة قرآنية جماعية، نهدي ثوابها ونسأل الله أن يتقبلها ويرحم فقيدنا.</p>
-   <div class="verse">﴿ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾</div>
+   <div class="verse">﴿ الَّذِينَ إِذَا أَصَابَتْهُم مُّصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ﴾
+    <div class="verse-audio-controls"><button class="btn secondary" id="verseAudioToggle" type="button" aria-pressed="false">▶ استمع للتلاوة — الشيخ عبد الرحمن السديس</button><span id="verseAudioStatus" role="status" aria-live="polite">اضغطي للاستماع</span></div>
+    <audio id="verseAudio" preload="none"></audio>
+   </div>
   </div>
  </div>
 </header>
@@ -169,6 +172,15 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
  <section class="card">
   <h2 class="section-head"><span class="ico">🗂️</span> سجل الختمات السابقة</h2>
   <div id="history"><p class="empty">لا توجد ختمات مكتملة بعد.</p></div>
+ </section>
+ <section class="card" id="khatmDuaSection">
+  <h2 class="section-head"><span class="ico">🤲</span> دعاء ختم القرآن على روح المرحوم أنور</h2>
+  <div class="dua-list">
+   <p>اللهم تقبّل منا تلاوة كتابك الكريم، واجعل ثواب ما قرأناه نورًا ورحمةً تصل إلى عبدك أنور برحمتك وفضلك.</p>
+   <p>اللهم اجعل القرآن العظيم شفيعًا له، ونوّر به قبره، وآنس وحشته، وارفع درجته في المهديين، واجعل قبره روضةً من رياض الجنة.</p>
+   <p>اللهم اغفر له وارحمه، واعفُ عنه وأكرم نزله ووسّع مدخله، واغسله بالماء والثلج والبرد، ونقّه من الخطايا كما يُنقّى الثوب الأبيض من الدنس.</p>
+   <p>اللهم اجزه عنّا خير الجزاء، واجمعنا به في جنات النعيم، وتقبّل من كل من قرأ وشارك ودعا له، إنك أنت الغفور الرحيم.</p>
+  </div>
  </section>
  <p class="help" id="connection" role="status" aria-live="polite"></p>
 </main>
@@ -415,6 +427,38 @@ async function addDhikr(type){
 $("showDuas").addEventListener("click",()=>{const box=$("duaCollection"),open=box.hidden;box.hidden=!open;$("showDuas").textContent=open?"إخفاء الأدعية":"عرض مجموعة الأدعية";$("showDuas").setAttribute("aria-expanded",String(open));});
 $("istighfarTap").addEventListener("click",()=>addDhikr("istighfar"));
 $("salawatTap").addEventListener("click",()=>addDhikr("salawat"));
+const verseAudio=$("verseAudio"),verseAudioToggle=$("verseAudioToggle"),verseAudioStatus=$("verseAudioStatus");
+const verseAudioTracks=[
+ "https://audio.qurankareem.co/Abdurrahmaan_As-Sudais_64kbps/002000.mp3",
+ "https://audio.qurankareem.co/Abdurrahmaan_As-Sudais_64kbps/002156.mp3"
+];
+let verseTrackIndex=0;
+function stopVerseAudio(){
+ if(!verseAudio)return;
+ verseAudio.pause();verseAudio.currentTime=0;verseAudio.removeAttribute("src");verseAudio.load();
+ verseTrackIndex=0;
+ if(verseAudioToggle){verseAudioToggle.textContent="▶ استمع للتلاوة — الشيخ عبد الرحمن السديس";verseAudioToggle.setAttribute("aria-pressed","false");}
+ if(verseAudioStatus)verseAudioStatus.textContent="اضغطي للاستماع";
+}
+verseAudioToggle.addEventListener("click",async()=>{
+ if(!verseAudio.paused){verseAudio.pause();verseAudioToggle.textContent="▶ مواصلة الاستماع";verseAudioToggle.setAttribute("aria-pressed","false");verseAudioStatus.textContent="التلاوة متوقفة مؤقتًا";return;}
+ if(!verseAudio.getAttribute("src")){verseTrackIndex=0;verseAudio.src=verseAudioTracks[0];}
+ try{
+  await verseAudio.play();
+  verseAudioToggle.textContent="Ⅱ إيقاف مؤقت";verseAudioToggle.setAttribute("aria-pressed","true");
+  verseAudioStatus.textContent=verseTrackIndex===0?"تلاوة البسملة ثم الآية":"تلاوة الآية الكريمة";
+ }catch(e){verseAudioStatus.textContent="تعذر تشغيل التلاوة؛ تحققي من الاتصال ثم أعيدي المحاولة.";}
+});
+verseAudio.addEventListener("ended",async()=>{
+ if(verseTrackIndex===0){
+  verseTrackIndex=1;verseAudio.src=verseAudioTracks[1];
+  try{await verseAudio.play();verseAudioStatus.textContent="تلاوة الآية الكريمة";}
+  catch(e){verseAudioToggle.textContent="▶ استمع للتلاوة — الشيخ عبد الرحمن السديس";verseAudioToggle.setAttribute("aria-pressed","false");verseAudioStatus.textContent="انتهت تلاوة البسملة؛ اضغطي للاستماع للآية.";}
+ }else{
+  verseTrackIndex=0;verseAudio.removeAttribute("src");verseAudio.load();
+  verseAudioToggle.textContent="▶ إعادة الاستماع — الشيخ عبد الرحمن السديس";verseAudioToggle.setAttribute("aria-pressed","false");verseAudioStatus.textContent="انتهت التلاوة";
+ }
+});
 let activeJuz=1,warshPageRanges=null,warshLayoutPromise=null;
 async function getWarshLayout(){
  if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("تعذر تحميل فهرس ورش");return r.json();}).then(d=>{
@@ -485,6 +529,7 @@ async function renderFullWarshPage(page){
  return img;
 }
 async function openReader(juz){
+ stopVerseAudio();
  activeJuz=Math.min(30,Math.max(1,Number(juz)||1));
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
  $("readerNotice").textContent="تظهر صفحات مصحف ورش كاملة؛ والصفحة التي تجمع نهاية جزء وبداية الجزء التالي تظهر كاملة في الجزأين.";
@@ -514,7 +559,7 @@ async function openReader(juz){
   reader.append(fragment);$("mushafPageFoot").textContent="الجزء "+activeJuz+" — صفحات مصحف ورش الكاملة من "+first+" إلى "+last+". الصفحة المشتركة تظهر كاملة في الجزأين المتجاورين.";
  }catch(e){console.error(e);reader.innerHTML="";$("mushafPageFoot").textContent="تعذر التحقق من حدود الجزء بدقة؛ لم نعرض صفحات غير مؤكدة. أعيدي المحاولة مع اتصال بالإنترنت.";}
 }
-function closeReader(){$("readerOverlay").style.display="none";document.body.style.overflow="";}
+function closeReader(){stopVerseAudio();$("readerOverlay").style.display="none";document.body.style.overflow="";}
 $("closeReader").addEventListener("click",closeReader);
 $("readerOverlay").addEventListener("click",e=>{if(e.target===$("readerOverlay"))closeReader();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeReader();});
