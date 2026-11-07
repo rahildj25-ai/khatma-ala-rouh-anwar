@@ -65,7 +65,7 @@ input[type=text]:focus{border-color:var(--green2);box-shadow:0 0 0 3px #426b5418
 .reader-panel{max-width:980px;margin:auto}
 .reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 15px;margin-bottom:10px}
 .reader-head h2{margin:0;color:var(--green);font-size:18px}
-.offline-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:12px 0;padding:12px;background:#f4f7f2;border-radius:12px}.offline-tools span{font-size:12px;color:var(--muted);text-align:center}.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0 auto;padding:10px;background:#fffdf6;border:2px solid #c7b58d;border-radius:4px;box-shadow:0 3px 12px #3b2d1718;max-width:880px}.warsh-page img{display:block;width:100%;height:auto;max-width:850px;margin:auto;object-fit:contain}.warsh-page .mushaf-page-image{background:#fffdf6}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
+.offline-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:12px 0;padding:12px;background:#f4f7f2;border-radius:12px}.offline-tools span{font-size:12px;color:var(--muted);text-align:center}.warsh-reader{display:flex;flex-direction:column;gap:12px;background:#f7f1df;border:1px solid #d8cfb6;border-radius:12px;padding:8px;text-align:center}.warsh-page{margin:0 auto;padding:18px 20px 12px;background:#fffdf6;border:2px solid #c7b58d;border-radius:4px;box-shadow:0 3px 12px #3b2d1718;width:100%;max-width:760px;min-height:780px;display:flex;flex-direction:column;gap:14px}.warsh-text-content{flex:1;font-family:"Noto Naskh Arabic","Amiri","Traditional Arabic",Tahoma,serif;font-size:clamp(23px,4.4vw,31px);font-weight:400;line-height:2.15;text-align:justify;text-align-last:center;direction:rtl;color:#201b15;overflow-wrap:anywhere}.warsh-surah-heading{display:block;text-align:center;border:1px solid #c7b58d;border-radius:9px;margin:12px 0;padding:4px 8px;color:#244638;font-size:.82em;font-weight:700}.ayah-number{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;min-width:1.55em;height:1.55em;margin:0 .12em;border:1px solid #b69a62;border-radius:50%;font-size:.56em;line-height:1;color:#725a2c;white-space:nowrap}.warsh-page figcaption{font-size:12px;color:#607367;padding:4px;text-align:center}.page-foot{text-align:center;color:#607367;font-size:13px;margin:9px 0}
 footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
 [hidden]{display:none!important}
 @media(max-width:560px){.hero{padding:32px 16px 38px}.card{padding:17px;border-radius:16px}.stats{gap:7px}.stat{padding:11px 4px}.stat strong{font-size:21px}.form-row{grid-template-columns:1fr}.form-row .btn{width:100%}.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.warsh-reader{padding:5px}.page-controls .btn{padding:9px 10px;font-size:12px}}
@@ -274,7 +274,7 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <button class="btn small" id="closeReader" type="button">رجوع للموقع</button>
   </div>
   <div class="notice" id="readerNotice">تظهر هنا صفحات الجزء الذي حجزه هذا المشارك فقط، مرتبة من الأعلى إلى الأسفل.</div>
-  <div class="offline-tools"><button class="btn" id="downloadMushaf" type="button">تحميل صفحات القرآن للعمل دون إنترنت</button><span id="offlineStatus" role="status" aria-live="polite">حمّلي الصفحات مرة واحدة بالإنترنت لتقرئيها لاحقاً بلا إنترنت.</span></div>
+  <div class="offline-tools"><button class="btn" id="downloadMushaf" type="button">تحميل نص المصحف للعمل دون إنترنت</button><span id="offlineStatus" role="status" aria-live="polite">حمّلي نص مصحف ورش مرة واحدة بالإنترنت لتقرئيه لاحقاً بلا إنترنت.</span></div>
   <div id="warshReader" class="warsh-reader" aria-live="polite"></div>
   <p class="page-foot" id="mushafPageFoot"></p>
  </div>
@@ -765,8 +765,14 @@ verseAudio.addEventListener("ended",async()=>{
 });
 let activeJuz=1,warshPageRanges=null,warshLayoutPromise=null;
 async function getWarshLayout(){
- if(!warshLayoutPromise)warshLayoutPromise=fetch("https://cdn.jsdelivr.net/gh/quran-ws/quran-text@main/data/mushaf/warsh.json").then(r=>{if(!r.ok)throw new Error("تعذر تحميل فهرس ورش");return r.json();}).then(d=>{
-  if(!Array.isArray(d.ayah_starts)||!Array.isArray(d.page_starts)||!Array.isArray(d.surahs)||d.surahs.length!==114)throw new Error("فهرس ورش غير مكتمل");
+ if(!warshLayoutPromise)warshLayoutPromise=(async()=>{
+  const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-text@80361413c304107801895ba303ca01971f20bfe4/data/mushaf/warsh.json";
+  let response=null;
+  if("caches" in window){try{const cache=await caches.open("anwar-warsh-text-v1");response=await cache.match(url);}catch(e){}}
+  if(!response){response=await fetch(url);if(!response.ok)throw new Error("تعذر تحميل نص مصحف ورش");if("caches" in window){try{const cache=await caches.open("anwar-warsh-text-v1");await cache.put(url,response.clone());}catch(e){}}}
+  const d=await response.json();
+  if(!Array.isArray(d.words)||!Array.isArray(d.ayah_starts)||!Array.isArray(d.page_starts)||!Array.isArray(d.surahs)||d.surahs.length!==114)throw new Error("بيانات مصحف ورش غير مكتملة");
+  if(!Array.isArray(d.words)||!Array.isArray(d.ayah_starts)||!Array.isArray(d.page_starts)||!Array.isArray(d.surahs)||d.surahs.length!==114)throw new Error("فهرس ورش غير مكتمل");
   // Standard juz starts, explicitly anchored to surah:ayah so a faulty juz_starts
   // array in a source index cannot shift the boundaries.
   const refs=[[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
@@ -785,8 +791,12 @@ async function getWarshLayout(){
   // Such a page is shown in both juz, with each view clipped to its own ayat.
   const sharedPages=new Set();
   juzOffsets.slice(1).forEach(offset=>{const before=pageAt(offset-1),after=pageAt(offset);if(before===after)sharedPages.add(after);});
-  return {data:d,juzAyahs,juzOffsets,pageAt,refs,sharedPages};
- });
+  const ayahEndAt=new Map();
+  d.ayah_starts.forEach((start,index)=>{const end=index+1<d.ayah_starts.length?d.ayah_starts[index+1]-1:d.words.length-1;ayahEndAt.set(end,index);});
+  const surahAtWord=new Map();
+  d.surahs.forEach((surah,index)=>{if(Number.isInteger(surah.first_ayah)&&d.ayah_starts[surah.first_ayah]!==undefined)surahAtWord.set(d.ayah_starts[surah.first_ayah],{number:index+1,meta:surah});});
+  return {data:d,juzAyahs,juzOffsets,pageAt,refs,sharedPages,ayahEndAt,surahAtWord};
+ })();
  return warshLayoutPromise;
 }
 async function autoCacheWarshPages(){
@@ -794,43 +804,41 @@ async function autoCacheWarshPages(){
  const status=$("offlineStatus"),button=$("downloadMushaf");
  try{
   if(navigator.storage?.persist)await navigator.storage.persist();
-  if(navigator.storage?.estimate){const e=await navigator.storage.estimate();if(e.quota&&e.quota-e.usage<45*1024*1024){status.textContent="مساحة التخزين المتاحة غير كافية لتحميل المصحف كاملاً تلقائياً؛ يمكن حفظ الصفحات تدريجياً.";return;}}
-  const cache=await caches.open("anwar-warsh-pages-v1");
-  let saved=0;
-  for(let page=1;page<=604;page++){
-   if(!navigator.onLine){status.textContent="توقف الحفظ مؤقتاً لانقطاع الإنترنت؛ سيكمل تلقائياً عند عودته.";return;}
-   const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
-   if(await cache.match(url)){saved++;continue;}
-   const response=await fetch(url);if(!response.ok)throw new Error("page "+page);
-   await cache.put(url,response.clone());saved++;
-   if(saved%10===0)status.textContent="جارٍ حفظ صفحات المصحف تلقائياً: "+saved+"/604";
+  const layout=await getWarshLayout();
+  const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-text@80361413c304107801895ba303ca01971f20bfe4/data/mushaf/warsh.json";
+  const cache=await caches.open("anwar-warsh-text-v1");
+  const saved=await cache.match(url);
+  if(!saved)throw new Error("لم يتم حفظ نص المصحف");
+  status.textContent="نص مصحف ورش محفوظ على هذا الجهاز. يمكنك القراءة دون إنترنت.";
+  if(button)button.textContent="نص المصحف محفوظ ✓";
+ }catch(e){status.textContent="تعذر حفظ نص المصحف حالياً؛ تأكدي من الإنترنت ثم أعيدي المحاولة.";}
+}
+function arabicDigits(value){return String(value).replace(/[0-9]/g,d=>"٠١٢٣٤٥٦٧٨٩"[Number(d)]);}
+function makeWarshTextPage(layout,page){
+ const d=layout.data, start=d.page_starts[page-1], end=page<d.page_starts.length?d.page_starts[page]:d.words.length;
+ if(!Number.isInteger(start)||!Number.isInteger(end)||start<0||end> d.words.length||end<=start)throw new Error("حدود الصفحة غير صحيحة");
+ const figure=document.createElement("figure");figure.className="warsh-page";
+ const content=document.createElement("div");content.className="warsh-text-content";
+ for(let i=start;i<end;i++){
+  const surah=layout.surahAtWord.get(i);
+  if(surah){
+   const heading=document.createElement("span");heading.className="warsh-surah-heading";
+   heading.textContent=surah.meta.name_ar||surah.meta.name||("سورة "+arabicDigits(surah.number));
+   content.append(heading);
   }
-  status.textContent="اكتمل حفظ صفحات المصحف الـ604 على هذا الجهاز. يمكنك القراءة دون إنترنت.";
-  if(button)button.textContent="صفحات المصحف محفوظة ✓";
- }catch(e){status.textContent="تعذر إكمال حفظ الصفحات حالياً؛ سيُعاد المحاولة عند الاتصال.";}
-}
-async function loadWarshPageSvg(page){
- const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
- if("caches" in window){
-  try{const cache=await caches.open("anwar-warsh-pages-v1");const saved=await cache.match(url);if(saved)return await saved.text();}catch(e){}
+  content.append(document.createTextNode(String(d.words[i])+" "));
+  if(layout.ayahEndAt.has(i)){
+   const globalAyah=layout.ayahEndAt.get(i);
+   let surahIndex=0;
+   for(let s=1;s<d.surahs.length;s++){if(d.surahs[s].first_ayah<=globalAyah)surahIndex=s;else break;}
+   const localAyah=globalAyah-d.surahs[surahIndex].first_ayah+1;
+   const marker=document.createElement("span");marker.className="ayah-number";marker.textContent=arabicDigits(localAyah);marker.setAttribute("aria-label","الآية "+arabicDigits(localAyah));
+   content.append(marker,document.createTextNode(" "));
+  }
  }
- const response=await fetch(url);
- if(!response.ok)throw new Error("تعذر تحميل صفحة المصحف "+page);
- const source=await response.text();
- if(!source.includes("<svg"))throw new Error("ملف صفحة المصحف غير صالح: "+page);
- return source;
-}
-async function renderFullWarshPage(page){
- const source=await loadWarshPageSvg(page);
- const blob=new Blob([source],{type:"image/svg+xml;charset=utf-8"});
- const objectUrl=URL.createObjectURL(blob);
- const img=document.createElement("img");
- img.className="mushaf-page-image";
- img.alt="صفحة "+page+" من المصحف الشريف برواية ورش عن نافع";
- img.loading="lazy";img.decoding="async";img.src=objectUrl;
- img.addEventListener("load",()=>URL.revokeObjectURL(objectUrl),{once:true});
- img.addEventListener("error",()=>URL.revokeObjectURL(objectUrl),{once:true});
- return img;
+ figure.append(content);
+ const caption=document.createElement("figcaption");caption.textContent="صفحة "+arabicDigits(page)+" — رواية ورش عن نافع";figure.append(caption);
+ return figure;
 }
 async function openReader(juz){
  stopVerseAudio();
@@ -842,7 +850,7 @@ async function openReader(juz){
   if(allowed!==true){alert("الدخول لهذا الجزء مسموح فقط للمشارك الذي حجزه، أو أن الحجز أُلغي/اكتملت قراءته.");return;}
  }catch(error){alert("تعذر التحقق من ملكية الحجز. تحققي من الإنترنت ثم أعيدي المحاولة.");return;}
  $("readerTitle").textContent="الجزء "+activeJuz+" — مصحف ورش عن نافع";
- $("readerNotice").textContent="تظهر صفحات مصحف ورش كاملة؛ والصفحة التي تجمع نهاية جزء وبداية الجزء التالي تظهر كاملة في الجزأين.";
+ $("readerNotice").textContent="نص القرآن برواية ورش عن نافع بحروف عربية واضحة ونقطها المعتادة، مع الحفاظ على ترتيب صفحات ورش وحدود الأجزاء.";
  $("readerOverlay").style.display="block";document.body.style.overflow="hidden";
  const reader=$("warshReader");reader.innerHTML="";
  $("mushafPageFoot").textContent="جارٍ التحقق من حدود الجزء...";
@@ -856,17 +864,9 @@ async function openReader(juz){
   if(last<first||first<1||last>604)throw new Error("مدى صفحات الجزء غير صالح");
   const fragment=document.createDocumentFragment();
   for(let page=first;page<=last;page++){
-   const figure=document.createElement("figure");figure.className="warsh-page";
-   const loading=document.createElement("div");loading.className="help";loading.textContent="جارٍ تحميل صفحة المصحف "+page+"...";figure.append(loading);
-   try{
-    const svg=await renderFullWarshPage(page);
-    figure.replaceChildren(svg);
-   }catch(pageError){
-    loading.textContent="تعذر تحميل صورة الصفحة "+page+" من مصحف ورش. تحققي من الاتصال بالإنترنت.";
-   }
-   const caption=document.createElement("figcaption");caption.textContent="الصفحة "+page;figure.append(caption);fragment.append(figure);
+   fragment.append(makeWarshTextPage(layout,page));
   }
-  reader.append(fragment);$("mushafPageFoot").textContent="الجزء "+activeJuz+" — صفحات مصحف ورش الكاملة من "+first+" إلى "+last+". الصفحة المشتركة تظهر كاملة في الجزأين المتجاورين.";
+  reader.append(fragment);$("mushafPageFoot").textContent="الجزء "+arabicDigits(activeJuz)+" — صفحات نص ورش من "+arabicDigits(first)+" إلى "+arabicDigits(last)+". أُبقي ترتيب الصفحات وحدود الأجزاء كما في بيانات ورش.";
  }catch(e){console.error(e);reader.innerHTML="";$("mushafPageFoot").textContent="تعذر التحقق من حدود الجزء بدقة؛ لم نعرض صفحات غير مؤكدة. أعيدي المحاولة مع اتصال بالإنترنت.";}
 }
 function closeReader(){stopVerseAudio();$("readerOverlay").style.display="none";document.body.style.overflow="";}
@@ -883,18 +883,12 @@ if("serviceWorker" in navigator){
 }
 $("downloadMushaf").addEventListener("click",async()=>{
  const button=$("downloadMushaf"),status=$("offlineStatus");
- if(!("caches" in window)){status.textContent="هذا المتصفح لا يدعم حفظ الصفحات دون إنترنت.";return;}
- button.disabled=true;let saved=0;
+ if(!("caches" in window)){status.textContent="هذا المتصفح لا يدعم حفظ نص المصحف دون إنترنت.";return;}
+ button.disabled=true;status.textContent="جارٍ تحميل نص مصحف ورش وحفظه...";
  try{
-  const cache=await caches.open("anwar-warsh-pages-v1");
-  for(let page=1;page<=604;page++){
-   const url="https://cdn.jsdelivr.net/gh/quran-ws/quran-svg@main/mushafs/warsh/kfqc/svg/"+String(page).padStart(3,"0")+".svg";
-   if(await cache.match(url)){saved++;status.textContent="الصفحات المحفوظة: "+saved+"/604";continue;}
-   const response=await fetch(url);if(!response.ok)throw new Error("page "+page);
-   await cache.put(url,response.clone());saved++;status.textContent="جارٍ تحميل صفحات المصحف: "+saved+"/604";
-  }
-  status.textContent="اكتمل التحميل! صفحات القرآن الـ604 محفوظة ويمكن قراءتها دون إنترنت.";button.textContent="تم تحميل صفحات القرآن ✓";
- }catch(e){status.textContent="توقف التحميل عند الصفحة "+(saved+1)+". تأكدي من الإنترنت واضغطي الزر لإكمال التحميل.";}
+  await getWarshLayout();
+  await autoCacheWarshPages();
+ }catch(e){status.textContent="تعذر تحميل نص المصحف؛ تأكدي من الإنترنت وحاولي مرة أخرى.";}
  finally{button.disabled=false;}
 });
 (async()=>{
