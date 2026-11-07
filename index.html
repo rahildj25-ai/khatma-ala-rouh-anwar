@@ -179,6 +179,11 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <div class="selection-bar"><span class="help" id="selectedCount" aria-live="polite">لم تختاري أي جزء بعد</span><button class="btn secondary small" id="clearSelection" type="button">إلغاء التحديد</button></div>
   <div id="parts" class="parts"></div>
  </section>
+ <section class="card" id="khatmaHistorySection">
+  <h2 class="section-head"><span class="ico">🗂️</span> سجل الختمات المكتملة</h2>
+  <p class="help">كلما تكتمل الأجزاء الثلاثون، تتسجل الختمة هنا تلقائياً، وتبدأ ختمة جديدة بأجزاء متاحة للجميع.</p>
+  <div id="history" aria-live="polite"><p class="empty">جارٍ تحميل سجل الختمات...</p></div>
+ </section>
  <section class="card">
   <h2 class="section-head"><span class="ico">📚</span> قراءة الجزء</h2>
   <p class="help">بعد الحجز، اضغطي «اقرأ الجزء». ستظهر صفحات الجزء المحجوز فقط، مرتبة تحت بعضها من البداية إلى النهاية.</p>
@@ -224,10 +229,6 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
    <p>اللهم اجمعنا به في جنات النعيم، في مقعد صدق عند مليك مقتدر.</p>
    <p>اللهم لا تحرمنا أجره، ولا تفتنّا بعده، واغفر لنا وله.</p>
   </div>
- </section>
- <section class="card">
-  <h2 class="section-head"><span class="ico">🗂️</span> سجل الختمات السابقة</h2>
-  <div id="history"><p class="empty">لا توجد ختمات مكتملة بعد.</p></div>
  </section>
  <section class="card" id="khatmDuaSection" hidden>
   <h2 class="section-head"><span class="ico">🤲</span> دعاء ختم القرآن على روح المرحوم أنور</h2>
@@ -513,13 +514,31 @@ function render(){
  renderHistory();
  updateSelection();
 }
-function renderHistory(){
- const box=$("history");box.innerHTML="";
- const counts=currentCounts();
- if(counts.done===30){
-  const p=document.createElement("p");p.className="empty";p.textContent="الحمد لله، اكتملت الختمة الحالية. تقبل الله من الجميع.";box.append(p);return;
+async function renderHistory(){
+ const box=$("history");
+ if(!box)return;
+ box.innerHTML='<p class="empty">جارٍ تحميل سجل الختمات...</p>';
+ try{
+  const rows=await api("/rest/v1/khatma_history?select=id,khatma_number,completed_at,participants,completed_parts&order=khatma_number.desc");
+  box.innerHTML="";
+  if(!rows.length){
+   const p=document.createElement("p");p.className="empty";p.textContent="لم تكتمل أي ختمة بعد. أول ختمة ستظهر هنا فور إتمام الأجزاء الثلاثين.";box.append(p);return;
+  }
+  rows.forEach(row=>{
+   const item=document.createElement("article");item.className="prayer-item";
+   const title=document.createElement("strong");title.textContent="الختمة رقم "+Number(row.khatma_number)+" — تمت بحمد الله ✓";
+   const date=document.createElement("time");
+   date.dateTime=row.completed_at;
+   date.textContent="تاريخ الإكمال: "+new Date(row.completed_at).toLocaleString("ar-DZ",{dateStyle:"medium",timeStyle:"short"});
+   const count=document.createElement("p");count.textContent="الأجزاء المكتملة: "+Number(row.completed_parts||30)+"/30";
+   const names=document.createElement("p");
+   const participants=Array.isArray(row.participants)?row.participants:[];
+   names.textContent="المشاركون: "+participants.map(person=>"الجزء "+person.juz+": "+(person.name||"مشارك")).join("، ");
+   item.append(title,date,count,names);box.append(item);
+  });
+ }catch(error){
+  box.innerHTML='<p class="empty">تعذر تحميل سجل الختمات الآن. سيُعاد التحديث تلقائياً.</p>';
  }
- const p=document.createElement("p");p.className="empty";p.textContent="الختمة جارية، وسيظهر اكتمالها هنا عند إتمام الأجزاء الثلاثين.";box.append(p);
 }
 function updateSelection(){
  const n=document.querySelectorAll(".part-choice:checked").length;
@@ -535,12 +554,13 @@ async function refresh(showMessage=false){
   state.parts=next;
   for(const op of reservationQueue){if(op.action==="book")state.parts[op.juz]={name:op.name,done:false,pending:true};else if(op.action==="complete"&&state.parts[op.juz])state.parts[op.juz]={...state.parts[op.juz],done:true,pending:true};else if(op.action==="cancel")delete state.parts[op.juz];}
   render();
+  renderHistory();
   connection.textContent=reservationQueue.length?"متصل؛ تغييرات هذا الجهاز تنتظر المزامنة.":"متصل بالختمة المشتركة ✓ التحديثات تظهر لجميع المشاركين تلقائياً.";
  }catch(e){
   let snap=null;try{snap=JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||"null")}catch(e){}
   if(snap?.parts)state.parts=snap.parts;
   for(const op of reservationQueue){if(op.action==="book")state.parts[op.juz]={name:op.name,done:false,pending:true};else if(op.action==="complete"&&state.parts[op.juz])state.parts[op.juz]={...state.parts[op.juz],done:true,pending:true};else if(op.action==="cancel")delete state.parts[op.juz];}
-  render();connection.textContent="دون إنترنت: آخر نسخة محفوظة وتغييراتك المعلّقة على هذا الجهاز. لا تظهر للآخرين حتى المزامنة.";
+  render();renderHistory();connection.textContent="دون إنترنت: آخر نسخة محفوظة وتغييراتك المعلّقة على هذا الجهاز. لا تظهر للآخرين حتى المزامنة.";
   if(showMessage&&!snap)alert("اتصلي بالإنترنت مرة واحدة لتحميل حالة الختمة.");
  }finally{refreshing=false;}
 }
