@@ -110,9 +110,11 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <h2 class="section-head"><span class="ico">🔐</span> إدارة الختمة</h2>
   <p class="help">دخول خاص بصاحبة الموقع لإلغاء الحجوزات غير المكتملة فقط.</p>
   <div id="adminLogin">
-   <p class="help">أدخلي رابط دخول آمن إلى بريد الإدارة المعتمد، دون كلمة مرور.</p>
+   <p class="help">الدخول خاص بصاحبة الموقع.</p>
    <p dir="ltr" style="text-align:center;font-weight:700">r********@gmail.com</p>
-   <button class="btn" id="adminLoginBtn" type="button">إرسال رابط الدخول إلى بريدي</button>
+   <label class="help" for="adminPassword">كلمة مرور الإدارة</label>
+   <input id="adminPassword" type="password" autocomplete="current-password" placeholder="أدخلي كلمة المرور" style="width:100%;margin:8px 0;padding:12px;border:1px solid #bbb;border-radius:10px">
+   <button class="btn" id="adminLoginBtn" type="button">دخول الإدارة</button>
    <p class="help" id="adminLoginStatus" role="status" aria-live="polite"></p>
   </div>
   <div id="adminPanel" hidden>
