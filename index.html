@@ -110,8 +110,9 @@ footer{text-align:center;color:#7c897f;padding:10px 15px 30px;font-size:13px}
   <h2 class="section-head"><span class="ico">🔐</span> إدارة الختمة</h2>
   <p class="help">دخول خاص بصاحبة الموقع لإلغاء الحجوزات غير المكتملة فقط.</p>
   <div id="adminLogin">
-   <p class="help">الدخول متاح لحساب الإدارة المعتمد فقط.</p>
-   <button class="btn" id="adminLoginBtn" type="button">الدخول بحساب Google</button>
+   <p class="help">الدخول متاح للبريد المعتمد فقط.</p>
+   <input id="adminPassword" type="password" autocomplete="current-password" placeholder="كلمة مرور الإدارة" aria-label="كلمة مرور الإدارة">
+   <button class="btn" id="adminLoginBtn" type="button">دخول الإدارة</button>
   </div>
   <div id="adminPanel" hidden>
    <div class="selection-bar"><span class="help" id="adminStatus">الحجوزات الحالية</span><div><button class="btn secondary small" id="adminRefresh" type="button">تحديث القائمة</button><button class="btn secondary small" id="adminLogout" type="button">خروج</button></div></div>
@@ -309,9 +310,20 @@ async function verifyAdminToken(token){
  await loadAdminReservations();
 }
 $("adminEntry").addEventListener("click",()=>{$("adminSection").hidden=false;$("adminSection").scrollIntoView({behavior:"smooth"});});
-$("adminLoginBtn").addEventListener("click",()=>{
- const redirect=window.location.origin+window.location.pathname;
- window.location.href=SUPABASE_URL+"/auth/v1/authorize?provider=google&redirect_to="+encodeURIComponent(redirect);
+$("adminLoginBtn").addEventListener("click",async()=>{
+ const password=$("adminPassword").value;
+ if(!password){alert("أدخلي كلمة المرور.");return;}
+ const btn=$("adminLoginBtn");btn.disabled=true;btn.textContent="جارٍ التحقق...";
+ try{
+  const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
+   method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
+   body:JSON.stringify({email:ADMIN_EMAIL,password})
+  });
+  const data=await response.json();
+  if(!response.ok||!data.access_token)throw new Error(data.msg||data.message||"بيانات الدخول غير صحيحة.");
+  await verifyAdminToken(data.access_token);
+ }catch(e){showAdminLoggedOut();alert("تعذر دخول الإدارة: "+e.message);}
+ finally{btn.disabled=false;btn.textContent="دخول الإدارة";$("adminPassword").value="";}
 });
 $("adminRefresh").addEventListener("click",loadAdminReservations);
 $("adminLogout").addEventListener("click",async()=>{
