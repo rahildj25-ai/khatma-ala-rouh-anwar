@@ -506,15 +506,15 @@ function render(){
    const label=document.createElement("label");
    const check=document.createElement("input");check.type="checkbox";check.className="part-choice";check.value=String(i);
    label.append(check,document.createTextNode("اختيار الجزء"));card.append(label);
+  }else if(!p.done && claims[i]){
+   const actions=document.createElement("div");actions.className="part-actions";
+   const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent=p.pending?"قراءة الجزء — بانتظار تأكيد الحجز":"قراءة الجزء";read.disabled=!!p.pending;read.addEventListener("click",()=>openReader(i));actions.append(read);
+   const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="أتممت القراءة";finish.disabled=!!p.pending;finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
+   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn secondary small";cancel.textContent="إلغاء الحجز";cancel.disabled=!!p.pending;cancel.addEventListener("click",()=>cancelPart(i));actions.append(cancel);
+   card.append(actions);
   }else if(!p.done && !p.pending && adminAccessToken){
    const actions=document.createElement("div");actions.className="part-actions";
    const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="قراءة الجزء (الإدارة)";read.addEventListener("click",()=>openReader(i,true));actions.append(read);
-   card.append(actions);
-  }else if(!p.done && !p.pending && claims[i]){
-   const actions=document.createElement("div");actions.className="part-actions";
-   const read=document.createElement("button");read.type="button";read.className="btn small";read.textContent="قراءة الجزء";read.addEventListener("click",()=>openReader(i));actions.append(read);
-   const finish=document.createElement("button");finish.type="button";finish.className="btn secondary small";finish.textContent="أتممت القراءة";finish.addEventListener("click",()=>finishPart(i));actions.append(finish);
-   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn secondary small";cancel.textContent="إلغاء الحجز";cancel.addEventListener("click",()=>cancelPart(i));actions.append(cancel);
    card.append(actions);
   }
   partsBox.append(card);
